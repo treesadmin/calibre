@@ -98,7 +98,8 @@ def get_data():
         'firefox_versions': firefox_versions(),
         'common_user_agents': common,
         'user_agents_popularity': ua_freq_map,
-        'timestamp': datetime.utcnow().isoformat() + '+00:00',
+        'timestamp': f'{datetime.utcnow().isoformat()}+00:00',
     }
+
     ans['desktop_platforms'] = list(all_desktop_platforms(ans['common_user_agents']))
     return ans

@@ -97,7 +97,7 @@ class WSJ(BasicNewsRecipe):
             # To understand the login logic read app-min.js from
             # https://sso.accounts.dowjones.com/login
             itp = quote(self.WSJ_ITP, safe='')
-            start_url = 'https://accounts.wsj.com/login?target=' + itp
+            start_url = f'https://accounts.wsj.com/login?target={itp}'
             kw['user_agent'] = random_user_agent(allow_ie=False)
             br = BasicNewsRecipe.get_browser(self, *a, **kw)
             self.log('Starting login process...')
@@ -140,7 +140,10 @@ class WSJ(BasicNewsRecipe):
                 res = br.open(rq)
             except Exception as err:
                 if hasattr(err, 'read'):
-                    raise Exception('Login request failed with error: {} and body: {}'.format(err, err.read().decode('utf-8', 'replace')))
+                    raise Exception(
+                        f"Login request failed with error: {err} and body: {err.read().decode('utf-8', 'replace')}"
+                    )
+
                 raise
             if res.code != 200:
                 raise ValueError('Failed to login, check your username and password')
@@ -162,7 +165,7 @@ class WSJ(BasicNewsRecipe):
 
     def abs_wsj_url(self, href):
         if not href.startswith('http'):
-            href = 'https://www.wsj.com' + href
+            href = f'https://www.wsj.com{href}'
         return href
 
     def wsj_find_articles(self, url, ahed=False):
@@ -218,10 +221,7 @@ class WSJ(BasicNewsRecipe):
 
     def wsj_add_feed(self, feeds, title, url):
         try:
-            articles = self.wsj_find_articles(url)
-            if not articles:
-                # retry once, sometimes these pages come up empty
-                articles = self.wsj_find_articles(url)
+            articles = self.wsj_find_articles(url) or self.wsj_find_articles(url)
         except Exception:
             self.log.exception('Failed to parse section:', title)
             articles = []

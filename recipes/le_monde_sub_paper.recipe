@@ -87,7 +87,7 @@ class LeMondeAbonne(BasicNewsRecipe):
         second = time.time()
         second += self.decalage
 
-        for i in range(7):
+        for _ in range(7):
             self.ltime = time.gmtime(second)
             self.timefmt = time.strftime(" %A %d %B %Y",
                                          self.ltime).decode(preferred_encoding)

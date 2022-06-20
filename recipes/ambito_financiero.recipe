@@ -82,9 +82,8 @@ class Ambito_Financiero(BasicNewsRecipe):
             prog = re.compile(
                 r"^(?P<status>\d+?),(?P<session_id>.+?),(?P<username>.+?),.*?"
             )
-            m = prog.match(sessiondata)
-            if m:
-                self.session_id = m.group('session_id')
+            if m := prog.match(sessiondata):
+                self.session_id = m['session_id']
         # br.set_debug_http(True)
         # br.set_debug_responses(True)
         # br.set_debug_redirects(True)
@@ -120,11 +119,9 @@ class Ambito_Financiero(BasicNewsRecipe):
                 timeout=self.timeout
             )
             soup = BeautifulSoup(raw_html)
-            p = soup.find(id="cuerpo_noticia")
-            if p:
+            if p := soup.find(id="cuerpo_noticia"):
                 smallsoup = BeautifulSoup(response.read())
-                cfind = smallsoup.find('div', id="contenido_data")
-                if cfind:
+                if cfind := smallsoup.find('div', id="contenido_data"):
                     p.append(cfind)
                 return type(u'')(soup)
         return raw_html
@@ -147,7 +144,7 @@ class Ambito_Financiero(BasicNewsRecipe):
                 count = self.fetch_retries
                 l, s, r = url.rpartition('/')
                 artid, s1, r1 = r.partition('-')
-                tfile = PersistentTemporaryFile('_' + artid + '.html')
+                tfile = PersistentTemporaryFile(f'_{artid}.html')
                 tfile.write(html)
                 tfile.close()
                 self.temp_files.append(tfile)

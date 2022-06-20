@@ -76,14 +76,12 @@ class Spektrum(BasicNewsRecipe):
         for feed in feeds:
             # Loop through all articles in feed.
             for article in feed.articles[:]:
-                if 'VIDEO' in article.title:
-                    feed.articles.remove(article)
-                # Remove articles with 'video','podcast' or 'rezension' in the url.
-                elif 'podcast' in article.url:
-                    feed.articles.remove(article)
-                elif 'video' in article.url:
-                    feed.articles.remove(article)
-                elif 'rezension' in article.url:
+                if (
+                    'VIDEO' in article.title
+                    or 'podcast' in article.url
+                    or 'video' in article.url
+                    or 'rezension' in article.url
+                ):
                     feed.articles.remove(article)
         return feeds
 

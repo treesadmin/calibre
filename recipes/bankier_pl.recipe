@@ -46,4 +46,4 @@ class bankier(BasicNewsRecipe):
         urlPart = segment[2]
         segments = urlPart.split('-')
         urlPart2 = segments[-1]
-        return 'http://www.bankier.pl/wiadomosci/print.html?article_id=' + urlPart2
+        return f'http://www.bankier.pl/wiadomosci/print.html?article_id={urlPart2}'

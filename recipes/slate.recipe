@@ -54,8 +54,7 @@ class Slate(BasicNewsRecipe):
         ):
             url = self.INDEX + url
             self.log('\nFound section:', sectitle, url)
-            articles = self.slate_section_articles(self.index_to_soup(url))
-            if articles:
+            if articles := self.slate_section_articles(self.index_to_soup(url)):
                 ans.append((sectitle, articles))
             if self.test and len(ans) > 1:
                 break
@@ -75,7 +74,7 @@ class Slate(BasicNewsRecipe):
             title = self.tag_to_string(h)
             desc = ''
             for q in ('byline', 'dek'):
-                span = div.find(attrs={'class': lambda x: x and ('-' + q) in x})
+                span = div.find(attrs={'class': lambda x: x and f'-{q}' in x})
                 if span is not None:
                     desc += self.tag_to_string(span).strip()
             self.log('\t' + title)

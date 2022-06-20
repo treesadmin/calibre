@@ -47,11 +47,11 @@ class WikiNews(BasicNewsRecipe):
     def get_article_url(self, article):
         artl = article.get('link',  None)
         rest, sep, article_id = artl.rpartition('/')
-        return 'http://en.wikinews.org/wiki/' + article_id
+        return f'http://en.wikinews.org/wiki/{article_id}'
 
     def print_version(self, url):
         rest, sep, article_id = url.rpartition('/')
-        return 'http://en.wikinews.org/w/index.php?title=' + article_id + '&printable=yes'
+        return f'http://en.wikinews.org/w/index.php?title={article_id}&printable=yes'
 
     def get_cover_url(self):
         return 'http://upload.wikimedia.org/wikipedia/commons/b/bd/Wikinews-logo-en.png'

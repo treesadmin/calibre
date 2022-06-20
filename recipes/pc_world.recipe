@@ -40,7 +40,7 @@ class pcWorld(BasicNewsRecipe):
 
     def get_obfuscated_article(self, url):
         br = self.get_browser()
-        br.open(url + '&print')
+        br.open(f'{url}&print')
 
         response = br.follow_link(url, nr=0)
         html = response.read()

@@ -17,7 +17,7 @@ if sys.argv[-1] == 'only-logo':
     sources = {'calibre':sources['calibre']}
 
 for name, src in sources.items():
-    iconset = name + '.iconset'
+    iconset = f'{name}.iconset'
     if os.path.exists(iconset):
         shutil.rmtree(iconset)
     os.mkdir(iconset)
@@ -28,12 +28,10 @@ for name, src in sources.items():
             iname2x = 'icon_{0}x{0}@2x.png'.format(sz // 2)
             if src.endswith('.svg'):
                 subprocess.check_call(['rsvg-convert', src, '-w', str(sz), '-h', str(sz), '-o', iname])
+            elif sz == 512:
+                shutil.copy2(src, iname)
             else:
-                # We have a 512x512 png image
-                if sz == 512:
-                    shutil.copy2(src, iname)
-                else:
-                    subprocess.check_call(['convert', src, '-resize', '{0}x{0}'.format(sz), iname])
+                subprocess.check_call(['convert', src, '-resize', '{0}x{0}'.format(sz), iname])
             if sz > 16:
                 shutil.copy2(iname, iname2x)
             if sz > 512:

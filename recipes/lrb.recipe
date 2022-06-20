@@ -12,7 +12,7 @@ def classes(classes):
 
 def absolutize(href):
     if href.startswith('/'):
-        href =  'https://www.lrb.co.uk' + href
+        href = f'https://www.lrb.co.uk{href}'
     return href
 
 
@@ -65,7 +65,7 @@ class LondonReviewOfBooksPayed(BasicNewsRecipe):
         img = container.find('img')
         self.cover_url = img['data-srcset'].split()[-2]
         h3 = container.find('h3')
-        self.timefmt = ' [{}]'.format(self.tag_to_string(h3))
+        self.timefmt = f' [{self.tag_to_string(h3)}]'
         a = img.findParent('a')
         soup = self.index_to_soup(absolutize(a['href']))
         grid = soup.find(attrs={'class': 'toc-grid-items'})
@@ -74,7 +74,7 @@ class LondonReviewOfBooksPayed(BasicNewsRecipe):
             url = absolutize(a['href'])
             h3 = a.find('h3')
             h4 = a.find('h4')
-            title = '{}: {}'.format(self.tag_to_string(h3), self.tag_to_string(h4))
+            title = f'{self.tag_to_string(h3)}: {self.tag_to_string(h4)}'
             self.log(title, url)
             articles.append({'title': title, 'url': url})
 

@@ -39,15 +39,17 @@ class Pagina12(BasicNewsRecipe):
     def get_cover_url(self):
         soup = self.index_to_soup(
             'http://www.pagina12.com.ar/diario/principal/diario/index.html')
-        for image in soup.findAll('img', alt=True):
-            if image['alt'].startswith('Tapa de la fecha'):
-                return image['src']
-                print(image)
-        return None
+        return next(
+            (
+                image['src']
+                for image in soup.findAll('img', alt=True)
+                if image['alt'].startswith('Tapa de la fecha')
+            ),
+            None,
+        )
 
     def parse_index(self):
         articles = []
-        numero = 1
         raw = self.index_to_soup(
             'http://www.pagina12.com.ar/diario/secciones/index.html', raw=True)
         raw = re.sub(r'(?i)<!DOCTYPE[^>]+>', '', raw)
@@ -56,8 +58,7 @@ class Pagina12(BasicNewsRecipe):
         feeds = []
 
         seen_titles = set()
-        for section in soup.findAll('div', 'seccionx'):
-            numero += 1
+        for numero, section in enumerate(soup.findAll('div', 'seccionx'), start=2):
             print(numero)
             section_title = self.tag_to_string(section.find(
                 'div', 'desplegable_titulo on_principal right'))
@@ -72,7 +73,7 @@ class Pagina12(BasicNewsRecipe):
                 a = post.find('a', href=True)
                 url = a['href']
                 if url.startswith('/'):
-                    url = 'http://pagina12.com.ar/imprimir' + url
+                    url = f'http://pagina12.com.ar/imprimir{url}'
                 p = post.find('div', attrs={'h2'})
                 desc = None
                 self.log('\tFound article:', title, 'at', url)

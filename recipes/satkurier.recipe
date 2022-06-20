@@ -29,8 +29,7 @@ class SATKurier(BasicNewsRecipe):
              (u'Blog', u'http://feeds.feedburner.com/satkurier/blog?format=xml')]
 
     def preprocess_html(self, soup):
-        image = soup.find(attrs={'id': 'news_mini_photo'})
-        if image:
+        if image := soup.find(attrs={'id': 'news_mini_photo'}):
             image.extract()
             header = soup.find('h1')
             header.replaceWith(header.prettify() + image.prettify())

@@ -64,4 +64,4 @@ class Cro24Sata(BasicNewsRecipe):
         return soup
 
     def print_version(self, url):
-        return url + '&action=ispis'
+        return f'{url}&action=ispis'

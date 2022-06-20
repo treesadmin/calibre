@@ -53,8 +53,8 @@ class Esensja(BasicNewsRecipe):
         a = soup.find('a', attrs={'href': re.compile('.*/index.html')})
         year = a['href'].split('/')[0]
         month = a['href'].split('/')[1]
-        self.HREF = 'http://www.esensja.pl/magazyn/' + year + '/' + month + '/iso/'
-        soup = self.index_to_soup(self.HREF + '01.html')
+        self.HREF = f'http://www.esensja.pl/magazyn/{year}/{month}/iso/'
+        soup = self.index_to_soup(f'{self.HREF}01.html')
         self.cover_url = 'http://www.esensja.pl/magazyn/' + \
             year + '/' + month + '/img/ilustr/cover_b.jpg'
         feeds = []
@@ -76,7 +76,7 @@ class Esensja(BasicNewsRecipe):
                 if len(articles) > 0:
                     section = chapter
                     if len(subchapter) > 0:
-                        section += ' - ' + subchapter
+                        section += f' - {subchapter}'
                     feeds.append((section, articles))
                     articles = []
                 if ''.join(tag['class']) == 'chapter':
@@ -98,43 +98,42 @@ class Esensja(BasicNewsRecipe):
 
             while True:
                 div = a.find('div', attrs={'class': 't-title2 nextpage'})
-                if div is not None:
-                    link = div.a['href']
-                    if not link.startswith('http'):
-                        link = self.HREF + link
-                    a = self.index_to_soup(link)
-                    articles.append({'title': self.tag_to_string(
-                        tag.a) + ' c. d. ' + str(i), 'url': link, 'date': '', 'description': ''})
-                    i = i + 1
-                else:
+                if div is None:
                     break
 
+                link = div.a['href']
+                if not link.startswith('http'):
+                    link = self.HREF + link
+                a = self.index_to_soup(link)
+                articles.append({'title': self.tag_to_string(
+                    tag.a) + ' c. d. ' + str(i), 'url': link, 'date': '', 'description': ''})
+                i = i + 1
         return feeds
 
     def append_page(self, soup, appendtag):
-        r = appendtag.find(attrs={'class': 'wiecej_xxx'})
-        if r:
-            nr = r.findAll(attrs={'class': 'tn-link'})[-1]
-            try:
-                nr = int(nr.a.string)
-            except:
-                return
-            baseurl = soup.find(attrs={'property': 'og:url'})[
-                'content'] + '&strona={0}'
-            for number in range(2, nr + 1):
-                soup2 = self.index_to_soup(baseurl.format(number))
-                pagetext = soup2.find(attrs={'class': 'tresc'})
-                pos = len(appendtag.contents)
-                appendtag.insert(pos, pagetext)
-            for r in appendtag.findAll(attrs={'class': ['wiecej_xxx', 'tekst_koniec']}):
-                r.extract()
-            for r in appendtag.findAll('script'):
-                r.extract()
+        if not (r := appendtag.find(attrs={'class': 'wiecej_xxx'})):
+            return
+        nr = r.findAll(attrs={'class': 'tn-link'})[-1]
+        try:
+            nr = int(nr.a.string)
+        except:
+            return
+        baseurl = soup.find(attrs={'property': 'og:url'})[
+            'content'] + '&strona={0}'
+        for number in range(2, nr + 1):
+            soup2 = self.index_to_soup(baseurl.format(number))
+            pagetext = soup2.find(attrs={'class': 'tresc'})
+            pos = len(appendtag.contents)
+            appendtag.insert(pos, pagetext)
+        for r in appendtag.findAll(attrs={'class': ['wiecej_xxx', 'tekst_koniec']}):
+            r.extract()
+        for r in appendtag.findAll('script'):
+            r.extract()
 
-            comments = appendtag.findAll(
-                text=lambda text: isinstance(text, Comment))
-            for comment in comments:
-                comment.extract()
+        comments = appendtag.findAll(
+            text=lambda text: isinstance(text, Comment))
+        for comment in comments:
+            comment.extract()
 
     def preprocess_html(self, soup):
         self.append_page(soup, soup.body)
@@ -146,11 +145,11 @@ class Esensja(BasicNewsRecipe):
             for r in tag.findAll('a', recursive=False):
                 r.extract()
             info = tag.find(attrs={'class': 'img_info'})
-            text = str(tag)
             if not src:
+                text = str(tag)
                 src = re.search('src="[^"]*?"', text)
                 if src:
-                    src = src.group(0)
+                    src = src[0]
                     src = src[5:].replace('//', '/')
             if src:
                 tag.contents = []

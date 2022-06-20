@@ -87,10 +87,7 @@ class IlPost(BasicNewsRecipe):
             "content"] if description else "No meta description given"
 
     def parse_index(self):
-        feeds = []
-        for section in sections:
-            feeds.append(self.parse_page(section[0], section[1]))
-        return feeds
+        return [self.parse_page(section[0], section[1]) for section in sections]
 
     if convert_to_grayscale:
         # Image conversion to greyscale by Starson17
@@ -106,7 +103,6 @@ class IlPost(BasicNewsRecipe):
             return soup
 
     def preprocess_html(self, soup):
-        galleryItems = soup.findAll("figure", {"class": "gallery-item"})
-        if galleryItems:
+        if galleryItems := soup.findAll("figure", {"class": "gallery-item"}):
             self.abort_article()
         return soup

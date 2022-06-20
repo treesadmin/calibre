@@ -18,9 +18,7 @@ def printf(*args, **kw):
 
 def download_file(url):
     from urllib.request import urlopen
-    count = 5
-    while count > 0:
-        count -= 1
+    for count in range(4, -1, -1):
         try:
             printf('Downloading', url)
             return urlopen(url).read()
@@ -96,9 +94,9 @@ def main():
         test()
     elif q == 'install':
         sw()
+    elif len(sys.argv) == 1:
+        raise SystemExit('Usage: win-ci.py sw|build|test')
     else:
-        if len(sys.argv) == 1:
-            raise SystemExit('Usage: win-ci.py sw|build|test')
         raise SystemExit('%r is not a valid action' % sys.argv[-1])
 
 

@@ -65,4 +65,4 @@ class VecernjiList(BasicNewsRecipe):
 
     def print_version(self, url):
         artid = url.rpartition('-')[2]
-        return 'http://www.vecernji.hr/index.php?cmd=show_clanak&action=print_popup&clanak_id=' + artid
+        return f'http://www.vecernji.hr/index.php?cmd=show_clanak&action=print_popup&clanak_id={artid}'

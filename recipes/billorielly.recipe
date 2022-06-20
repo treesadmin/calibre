@@ -49,8 +49,11 @@ class BillOReilly(BasicNewsRecipe):
                     continue
 
                 if url.startswith('/'):
-                    url = 'http://www.billoreilly.com' + url + \
-                        '&dest=/pg/jsp/community/tvshowprint.jsp'
+                    url = (
+                        f'http://www.billoreilly.com{url}'
+                        + '&dest=/pg/jsp/community/tvshowprint.jsp'
+                    )
+
 
                 self.log('\t\tFound article:', title)
                 self.log('\t\t\t', url)
@@ -75,7 +78,7 @@ class BillOReilly(BasicNewsRecipe):
                     continue
 
                 if url.startswith('/'):
-                    url = 'http://www.billoreilly.com' + url + '&printerFriendly=true"'
+                    url = f'http://www.billoreilly.com{url}' + '&printerFriendly=true"'
 
                 self.log('\t\tFound article:', title)
                 self.log('\t\t\t', url)

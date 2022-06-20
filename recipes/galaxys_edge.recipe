@@ -54,7 +54,15 @@ class AdvancedUserRecipe1515196393(BasicNewsRecipe):
             content_file = PersistentTemporaryFile(suffix='.html', dir=self.ctdir)
             content_file.write(r.read())
             content_file.close()
-            current_articles.append({'title': title, 'url':'file://' + content_file.name, 'description':'', 'date':''})
+            current_articles.append(
+                {
+                    'title': title,
+                    'url': f'file://{content_file.name}',
+                    'description': '',
+                    'date': '',
+                }
+            )
+
         if current_articles and current_section:
             feeds.append((current_section, current_articles))
 

@@ -161,24 +161,23 @@ class NewYorkTimes(BasicNewsRecipe):
         try:
             soup = self.index_to_soup(INDEX)
         except Exception as err:
-            if getattr(err, 'code', None) == 404:
-                try:
-                    soup = self.index_to_soup(strftime('https://www.nytimes.com/issue/todayspaper/%Y/%m/%d/todays-new-york-times'))
-                except Exception as err:
-                    if getattr(err, 'code', None) == 404:
-                        dt = datetime.datetime.today() - datetime.timedelta(days=1)
-                        soup = self.index_to_soup(dt.strftime('https://www.nytimes.com/issue/todayspaper/%Y/%m/%d/todays-new-york-times'))
-                    else:
-                        raise
-            else:
+            if getattr(err, 'code', None) != 404:
                 raise
+            try:
+                soup = self.index_to_soup(strftime('https://www.nytimes.com/issue/todayspaper/%Y/%m/%d/todays-new-york-times'))
+            except Exception as err:
+                if getattr(err, 'code', None) != 404:
+                    raise
+                dt = datetime.datetime.now() - datetime.timedelta(days=1)
+                soup = self.index_to_soup(dt.strftime('https://www.nytimes.com/issue/todayspaper/%Y/%m/%d/todays-new-york-times'))
         return soup
 
     def read_nyt_metadata(self):
         soup = self.read_todays_paper()
         pdate = soup.find('meta', attrs={'name':'pdate', 'content': True})['content']
         date = strptime(pdate, '%Y%m%d', assume_utc=False, as_utc=False)
-        self.cover_url = 'https://static01.nyt.com/images/{}/nytfrontpage/scan.jpg'.format(date.strftime('%Y/%m/%d'))
+        self.cover_url = f"https://static01.nyt.com/images/{date.strftime('%Y/%m/%d')}/nytfrontpage/scan.jpg"
+
         self.timefmt = strftime(' [%d %b, %Y]', date)
         return soup
 
@@ -252,7 +251,7 @@ class NewYorkTimes(BasicNewsRecipe):
                 if a is not None:
                     url = a['href']
                     if url.startswith('/'):
-                        url = 'https://www.nytimes.com' + url
+                        url = f'https://www.nytimes.com{url}'
                     desc = ''
                     p = h2.findNextSibling('p')
                     if p is not None:
@@ -293,15 +292,14 @@ class NewYorkTimes(BasicNewsRecipe):
         self.read_nyt_metadata()
         feeds = []
         for section_title, slug in web_sections:
-            url = 'https://www.nytimes.com/section/' + slug
+            url = f'https://www.nytimes.com/section/{slug}'
             try:
                 soup = self.index_to_soup(url)
             except Exception:
                 self.log.error('Failed to download section:', url)
                 continue
             self.log('Found section:', section_title)
-            articles = list(self.parse_web_section(soup, slug))
-            if articles:
+            if articles := list(self.parse_web_section(soup, slug)):
                 feeds.append((section_title, articles))
             if self.test and len(feeds) >= self.test[0]:
                 break
@@ -328,7 +326,6 @@ class NewYorkTimes(BasicNewsRecipe):
         if not hasattr(self, 'rua_stored'):
             self.rua_stored = random_user_agent(allow_ie=False)
         br = browser(user_agent=self.rua_stored)
-        response = br.open_novisit(*args, **kwargs)
         # headers = response.info()
         # if headers.get('X-PageType') == 'vi-story':
         #     import tempfile
@@ -338,6 +335,6 @@ class NewYorkTimes(BasicNewsRecipe):
         #     time.sleep(1)
         #     br = browser()
         #     response = br.open_novisit(*args, **kwargs)
-        return response
+        return br.open_novisit(*args, **kwargs)
 
     open = open_novisit

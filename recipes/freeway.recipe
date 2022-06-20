@@ -46,8 +46,7 @@ class General(BasicNewsRecipe):
     def parse_index(self):
         feeds = []
         for title, url in [('Articulos', 'http://freeway.com.uy/revista/')]:
-            articles = self.art_parse_section(url)
-            if articles:
+            if articles := self.art_parse_section(url):
                 feeds.append((title, articles))
         return feeds
 
@@ -68,7 +67,7 @@ class General(BasicNewsRecipe):
                 if not url or not title:
                     continue
                 if url.startswith('/'):
-                    url = 'http://freeway.com.uy' + url
+                    url = f'http://freeway.com.uy{url}'
                 p = td.find('p', attrs={'class': 'txt_articulos'})
                 description = self.tag_to_string(p)
                 self.log('\t\tFound article:', title)

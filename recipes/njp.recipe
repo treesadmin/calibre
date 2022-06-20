@@ -92,4 +92,4 @@ class NewJournalOfPhysics(BasicNewsRecipe):
                           ]
 
     def print_version(self, url):
-        return url + "/article"
+        return f"{url}/article"

@@ -3,12 +3,6 @@
 
 # License: GPLv3 Copyright: 2019, Kovid Goyal <kovid at kovidgoyal.net>
 
-if False:
-    # This is here to keep my python error checker from complaining about
-    # the builtin functions that will be defined by the plugin loading system
-    # You do not need this code in your plugins
-    get_icons = get_resources = None
-
 # The class that all interface action plugins must inherit from
 from calibre.gui2.actions import InterfaceAction
 from qt.core import QInputDialog

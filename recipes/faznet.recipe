@@ -60,8 +60,10 @@ class FazNet(BasicNewsRecipe):
     INDEX = ''
 
     def append_page(self, soup, appendtag, position):
-        pager = soup.find('li',attrs={'class':'nvg-Paginator_Item nvg-Paginator_Item-to-next-page'})
-        if pager:
+        if pager := soup.find(
+            'li',
+            attrs={'class': 'nvg-Paginator_Item nvg-Paginator_Item-to-next-page'},
+        ):
             nexturl = self.INDEX + pager.a['href']
             soup2 = self.index_to_soup(nexturl)
             texttag = soup2.find('article', attrs={'class':'atc'})

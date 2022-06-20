@@ -13,7 +13,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 def absolutize(url):
     if url.startswith('/'):
-        url = ('https://www.journalofaccountancy.com' + url).partition('#')[0]
+        url = f'https://www.journalofaccountancy.com{url}'.partition('#')[0]
     return url
 
 
@@ -103,9 +103,13 @@ class JournalOfAccountancy(BasicNewsRecipe):
 
         def get_data(service):
             service_url = (
-                'https://www.journalofaccountancy.com' + issue_path +
-                '/jcr:content/main-content-section/' + service + '.en.service'
-            )
+                (
+                    f'https://www.journalofaccountancy.com{issue_path}'
+                    + '/jcr:content/main-content-section/'
+                )
+                + service
+            ) + '.en.service'
+
             self.log('\nSERIVICE URL at ', service_url)
             req = Request(service_url, None, service_headers)
             with closing(self.browser.open(req)) as r:

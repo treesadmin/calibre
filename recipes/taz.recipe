@@ -36,7 +36,7 @@ class TazDigiabo(BasicNewsRecipe):
     def build_index(self):
         domain = "http://dl.taz.de"
 
-        url = domain + "/epub/"
+        url = f"{domain}/epub/"
 
         auth_handler = HTTPBasicAuthHandler()
         auth_handler.add_password(realm='TAZ-ABO',

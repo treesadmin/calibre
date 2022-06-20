@@ -34,8 +34,7 @@ class EntrepeneurMagRecipe(BasicNewsRecipe):
     INDEX = 'http://www.entrepreneur.com'
 
     def parse_index(self):
-        root = self.index_to_soup(
-            self.INDEX + '/magazine/index.html', as_tree=True)
+        root = self.index_to_soup(f'{self.INDEX}/magazine/index.html', as_tree=True)
         for href in root.xpath('//h2[@class="sectiontitle nb"]/a/@href'):
             return self.parse_ent_index(self.INDEX + href)
 
@@ -43,7 +42,7 @@ class EntrepeneurMagRecipe(BasicNewsRecipe):
         root = self.index_to_soup(url, as_tree=True)
         img = root.xpath('//a[@class="hero"]/img[@class="lazy"]')[0]
         self.cover_url = img.get('data-original')
-        self.timefmt = ' [%s]' % img.get('alt').rpartition('-')[-1].strip()
+        self.timefmt = f" [{img.get('alt').rpartition('-')[-1].strip()}]"
         body = root.xpath('//div[@id="latest"]')[0]
         ans = []
         for x in body.xpath('descendant::h3'):

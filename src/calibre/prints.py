@@ -9,8 +9,7 @@ from polyglot.builtins import as_bytes, as_unicode
 
 
 def is_binary(stream):
-    mode = getattr(stream, 'mode', None)
-    if mode:
+    if mode := getattr(stream, 'mode', None):
         return 'b' in mode
     return not isinstance(stream, io.TextIOBase)
 

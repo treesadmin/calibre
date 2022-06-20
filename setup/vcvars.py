@@ -11,7 +11,7 @@ from functools import lru_cache
 from glob import glob
 
 # See the table at https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
-python_msc_version = int(re.search(r'\[MSC v\.(\d+) ', sys.version).group(1))
+python_msc_version = int(re.search(r'\[MSC v\.(\d+) ', sys.version)[1])
 if python_msc_version < 1920:
     raise SystemExit(f'Python MSC version {python_msc_version} too old, needs Visual studio 2019')
 if python_msc_version > 1929:

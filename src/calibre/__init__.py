@@ -1,5 +1,6 @@
 
 ''' E-book management software'''
+
 __license__   = 'GPL v3'
 __copyright__ = '2008, Kovid Goyal <kovid@kovidgoyal.net>'
 __docformat__ = 'restructuredtext en'
@@ -23,11 +24,6 @@ from calibre.startup import initialize_calibre
 initialize_calibre()
 from calibre.utils.icu import safe_chr
 from calibre.prints import prints
-
-if False:
-    # Prevent pyflakes from complaining
-    __appname__, islinux, __version__
-    isfrozen, __author__, isbsd, config_dir, plugins
 
 _mt_inited = False
 
@@ -71,9 +67,7 @@ def get_types_map():
 
 
 def to_unicode(raw, encoding='utf-8', errors='strict'):
-    if isinstance(raw, unicode_type):
-        return raw
-    return raw.decode(encoding, errors)
+    return raw if isinstance(raw, unicode_type) else raw.decode(encoding, errors)
 
 
 def patheq(p1, p2):
@@ -96,13 +90,12 @@ def osx_version():
     if ismacos:
         import platform
         src = platform.mac_ver()[0]
-        m = re.match(r'(\d+)\.(\d+)\.(\d+)', src)
-        if m:
-            return int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if m := re.match(r'(\d+)\.(\d+)\.(\d+)', src):
+            return int(m[1]), int(m[2]), int(m[3])
 
 
 def confirm_config_name(name):
-    return name + '_again'
+    return f'{name}_again'
 
 
 _filename_sanitize_unicode = frozenset(('\\', '|', '?', '*', '<',        # no2to3
@@ -130,10 +123,10 @@ def sanitize_file_name(name, substitute='_'):
     one += ext
     # Windows doesn't like path components that end with a period or space
     if one and one[-1] in ('.', ' '):
-        one = one[:-1]+'_'
+        one = f'{one[:-1]}_'
     # Names starting with a period are hidden on Unix
     if one.startswith('.'):
-        one = '_' + one[1:]
+        one = f'_{one[1:]}'
     return one
 
 
@@ -173,7 +166,7 @@ def load_library(name, cdll):
         if hasattr(sys, 'frameworks_dir'):
             return cdll.LoadLibrary(os.path.join(getattr(sys, 'frameworks_dir'), name))
         return cdll.LoadLibrary(name)
-    return cdll.LoadLibrary(name+'.so')
+    return cdll.LoadLibrary(f'{name}.so')
 
 
 def extract(path, dir):
@@ -214,7 +207,7 @@ def get_proxies(debug=True):
         if not proxy or '..' in proxy or key == 'auto':
             del proxies[key]
             continue
-        if proxy.startswith(key+'://'):
+        if proxy.startswith(f'{key}://'):
             proxy = proxy[len(key)+3:]
         if key == 'https' and proxy.startswith('http://'):
             proxy = proxy[7:]
@@ -233,8 +226,7 @@ def get_proxies(debug=True):
 
 def get_parsed_proxy(typ='http', debug=True):
     proxies = get_proxies(debug)
-    proxy = proxies.get(typ, None)
-    if proxy:
+    if proxy := proxies.get(typ, None):
         pattern = re.compile((
             '(?:ptype://)?'
             '(?:(?P<user>\\w+):(?P<pass>.*)@)?'
@@ -242,15 +234,15 @@ def get_parsed_proxy(typ='http', debug=True):
             '(?::(?P<port>\\d+))?').replace('ptype', typ)
         )
 
-        match = pattern.match(proxies[typ])
-        if match:
+        if match := pattern.match(proxies[typ]):
             try:
                 ans = {
-                        'host' : match.group('host'),
-                        'port' : match.group('port'),
-                        'user' : match.group('user'),
-                        'pass' : match.group('pass')
-                    }
+                    'host': match['host'],
+                    'port': match['port'],
+                    'user': match['user'],
+                    'pass': match['pass'],
+                }
+
                 if ans['port']:
                     ans['port'] = int(ans['port'])
             except:
@@ -272,7 +264,7 @@ def get_proxy_info(proxy_scheme, proxy_string):
     '''
     from polyglot.urllib import urlparse
     try:
-        proxy_url = '%s://%s'%(proxy_scheme, proxy_string)
+        proxy_url = f'{proxy_scheme}://{proxy_string}'
         urlinfo = urlparse(proxy_url)
         ans = {
             'scheme': urlinfo.scheme,
@@ -298,10 +290,10 @@ def random_user_agent(choose=None, allow_ie=True):
         ua_list = tuple(x for x in ua_list if 'Trident/' not in x)
     if choose is not None:
         return ua_list[choose]
-    pm = user_agents_popularity_map()
-    weights = None
-    if pm:
+    if pm := user_agents_popularity_map():
         weights = tuple(map(pm.__getitem__, ua_list))
+    else:
+        weights = None
     return random.choices(ua_list, weights=weights)[0]
 
 
@@ -323,11 +315,9 @@ def browser(honor_time=True, max_time=2, user_agent=None, verify_ssl_certificate
     opener.addheaders = [('User-agent', user_agent)]
     proxies = get_proxies()
     to_add = {}
-    http_proxy = proxies.get('http', None)
-    if http_proxy:
+    if http_proxy := proxies.get('http', None):
         to_add['http'] = http_proxy
-    https_proxy = proxies.get('https', None)
-    if https_proxy:
+    if https_proxy := proxies.get('https', None):
         to_add['https'] = https_proxy
     if to_add:
         opener.set_proxies(to_add)
@@ -549,11 +539,17 @@ def url_slash_cleaner(url):
 
 def human_readable(size, sep=' '):
     """ Convert a size in bytes into a human readable form """
-    divisor, suffix = 1, "B"
-    for i, candidate in enumerate(('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB')):
-        if size < (1 << ((i + 1) * 10)):
-            divisor, suffix = (1 << (i * 10)), candidate
-            break
+    divisor, suffix = next(
+        (
+            (1 << (i * 10), candidate)
+            for i, candidate in enumerate(
+                ('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB')
+            )
+            if size < (1 << ((i + 1) * 10))
+        ),
+        (1, "B"),
+    )
+
     size = unicode_type(float(size)/divisor)
     if size.find(".") > -1:
         size = size[:size.find(".")+2]

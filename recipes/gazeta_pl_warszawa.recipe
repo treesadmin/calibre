@@ -41,24 +41,23 @@ class gw_wawa(BasicNewsRecipe):
     feeds = [(u'Wiadomości', u'http://rss.gazeta.pl/pub/rss/warszawa.xml')]
 
     def print_version(self, url):
-        if 'feedsportal.com' in url:
-            s = url.rpartition('gazeta0Bpl')
-            u = s[2]
-            if not s[0]:
-                u = url.rpartition('wyborcza0Bpl')[2]
-            u = u.replace('/l/', '/')
-            u = u.replace('/ia1.htm', '')
-            u = u.replace('/story01.htm', '')
-            u = u.replace('0C', '/')
-            u = u.replace('A', '')
-            u = u.replace('0E', '-')
-            u = u.replace('0H', ',')
-            u = u.replace('0I', '_')
-            u = u.replace('0B', '.')
-            u = self.INDEX + u
-            return u
-        else:
+        if 'feedsportal.com' not in url:
             return url
+        s = url.rpartition('gazeta0Bpl')
+        u = s[2]
+        if not s[0]:
+            u = url.rpartition('wyborcza0Bpl')[2]
+        u = u.replace('/l/', '/')
+        u = u.replace('/ia1.htm', '')
+        u = u.replace('/story01.htm', '')
+        u = u.replace('0C', '/')
+        u = u.replace('A', '')
+        u = u.replace('0E', '-')
+        u = u.replace('0H', ',')
+        u = u.replace('0I', '_')
+        u = u.replace('0B', '.')
+        u = self.INDEX + u
+        return u
 
     def preprocess_html(self, soup):
         tag = soup.find(id='Str')
@@ -91,7 +90,4 @@ class gw_wawa(BasicNewsRecipe):
         tag.extract()
 
     def image_url_processor(self, baseurl, url):
-        if url.startswith(' '):
-            return url.strip()
-        else:
-            return url
+        return url.strip() if url.startswith(' ') else url

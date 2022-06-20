@@ -37,4 +37,4 @@ class BBCVietnamese(BasicNewsRecipe):
     ]
 
     def print_version(self, url):
-        return url + '?q=1'
+        return f'{url}?q=1'

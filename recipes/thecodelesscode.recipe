@@ -130,7 +130,7 @@ class CodelessCode(BasicNewsRecipe):
                     anchor.replaceWith(linktext)
 
         # Find all the images, and wrap them up in an image_wrapper div
-        for i in range(0, len(koan.contents), 1):
+        for i in range(len(koan.contents)):
             if not hasattr(koan.contents[i], 'name'):
                 continue  # skip carriage returns
             if koan.contents[i].name == u'img':

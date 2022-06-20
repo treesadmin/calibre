@@ -16,7 +16,7 @@ class Message:
         self.filename, self.lineno, self.msg = filename, lineno, msg
 
     def __str__(self):
-        return '%s:%s: %s' % (self.filename, self.lineno, self.msg)
+        return f'{self.filename}:{self.lineno}: {self.msg}'
 
 
 class Check(Command):

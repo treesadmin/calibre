@@ -63,9 +63,12 @@ def generated_langs():
 
 
 # ignore generated files in languages other than the language we are building for
-ge = {'generated/' + x for x in generated_langs()} | {
-    'generated/' + x for x in os.environ.get('ALL_USER_MANUAL_LANGUAGES', '').split()}
-ge.discard('generated/' + language)
+ge = {f'generated/{x}' for x in generated_langs()} | {
+    f'generated/{x}'
+    for x in os.environ.get('ALL_USER_MANUAL_LANGUAGES', '').split()
+}
+
+ge.discard(f'generated/{language}')
 exclude_patterns += list(ge)
 del ge
 
@@ -91,7 +94,7 @@ today_fmt = '%B %d, %Y'
 unused_docs = ['global', 'cli/global']
 
 locale_dirs = ['locale/']
-title = '%s User Manual' % __appname__
+title = f'{__appname__} User Manual'
 needs_localization = language not in {'en', 'eng'}
 if needs_localization:
     import gettext
@@ -158,9 +161,13 @@ html_last_updated_fmt = '%b %d, %Y'
 html_short_title = _('Start')
 
 from calibre.utils.localization import get_language
-html_context = {}
-html_context['other_languages'] = [
-    (lc, get_language(lc)) for lc in os.environ.get('ALL_USER_MANUAL_LANGUAGES', '').split() if lc != language]
+html_context = {
+    'other_languages': [
+        (lc, get_language(lc))
+        for lc in os.environ.get('ALL_USER_MANUAL_LANGUAGES', '').split()
+        if lc != language
+    ]
+}
 
 
 def sort_languages(x):
@@ -184,7 +191,7 @@ del sort_languages, get_language
 
 epub_author      = u'Kovid Goyal'
 epub_publisher   = u'Kovid Goyal'
-epub_copyright   = u'© {} Kovid Goyal'.format(date.today().year)
+epub_copyright = f'© {date.today().year} Kovid Goyal'
 epub_description = u'Comprehensive documentation for calibre'
 epub_identifier  = u'https://manual.calibre-ebook.com'
 epub_scheme      = u'url'

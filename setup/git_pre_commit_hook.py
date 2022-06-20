@@ -55,18 +55,18 @@ class Bug:
             print('Working on bug:', summary)
             if int(bug) > 100000 and action != 'See':
                 self.close_bug(bug, action)
-                return match.group() + ' [%s](%s)' % (summary, LAUNCHPAD_BUG % bug)
-            return match.group() + ' (%s)' % summary
+                return match.group() + f' [{summary}]({LAUNCHPAD_BUG % bug})'
+            return match.group() + f' ({summary})'
         return match.group()
 
     def close_bug(self, bug, action):
-        print('Closing bug #%s' % bug)
+        print(f'Closing bug #{bug}')
         suffix = (
             'The fix will be in the next release. '
             'calibre is usually released every alternate Friday.'
         )
         action += 'ed'
-        msg = '%s in branch %s. %s' % (action, 'master', suffix)
+        msg = f'{action} in branch master. {suffix}'
         msg = msg.replace('Fixesed', 'Fixed')
         msg += '\n\n status fixreleased'
 
@@ -74,7 +74,7 @@ class Bug:
 
         sendmail = importlib.import_module(SENDMAIL[1])
 
-        to = bug + '@bugs.launchpad.net'
+        to = f'{bug}@bugs.launchpad.net'
         sendmail.sendmail(msg, to, 'Fixed in master')
 
 

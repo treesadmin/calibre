@@ -37,7 +37,7 @@ def get_cmd(exe, bypy, which, bitness, sign_installers, notarize=True, compressi
         cmd.append('--sign-installers')
     if notarize:
         cmd.append('--notarize')
-    cmd.append('--compression-level=' + compression_level)
+    cmd.append(f'--compression-level={compression_level}')
     return cmd
 
 

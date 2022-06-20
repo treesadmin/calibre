@@ -35,7 +35,7 @@ class HNWithCommentsLink(BasicNewsRecipe):
     articles_are_obfuscated = True
 
     def get_readable_content(self, url):
-        self.log('get_readable_content(' + url + ')')
+        self.log(f'get_readable_content({url})')
         br = self.get_browser()
         f = br.open(url)
         html = f.read()
@@ -44,14 +44,14 @@ class HNWithCommentsLink(BasicNewsRecipe):
         return self.extract_readable_article(html, url)
 
     def get_hn_content(self, url):
-        self.log('get_hn_content(' + url + ')')
+        self.log(f'get_hn_content({url})')
         soup = self.index_to_soup(url)
         main = soup.find('tr').findNextSiblings('tr', limit=2)[1].td
 
         title = self.tag_to_string(main.find('td', 'title'))
         link = main.find('td', 'title').find('a')['href']
         if link.startswith('item?'):
-            link = 'https://news.ycombinator.com/' + link
+            link = f'https://news.ycombinator.com/{link}'
         readable_link = link.rpartition('http://')[2].rpartition('https://')[2]
         subtext = self.tag_to_string(main.find('td', 'subtext'))
 
@@ -64,27 +64,40 @@ class HNWithCommentsLink(BasicNewsRecipe):
 
         comments = u''
         for td in main.findAll('td', 'default'):
-            comhead = td.find('span', 'comhead')
-            if comhead:
+            if comhead := td.find('span', 'comhead'):
                 com_title = u'<h4>' + \
                     self.tag_to_string(comhead).replace(
                         ' | link', '') + u'</h4>'
                 comhead.parent.extract()
-                br = td.find('br')
-                if br:
+                if br := td.find('br'):
                     br.extract()
-                reply = td.find('a', attrs={'href': re.compile('^reply?')})
-                if reply:
+                if reply := td.find('a', attrs={'href': re.compile('^reply?')}):
                     reply.parent.extract()
                 td.name = 'div'
                 indent_width = (int(td.parent.find('td').img['width']) * 2) / 3
-                td['style'] = 'padding-left: ' + str(indent_width) + 'px'
+                td['style'] = f'padding-left: {str(indent_width)}px'
                 comments = comments + com_title + td.prettify()
 
-        body = u'<h3>' + title + u'</h3><p><a href="' + link + u'">' + readable_link + \
-            u'</a><br/><strong>' + subtext + u'</strong></p>' + title_content + u'<br/>'
+        body = (
+            (
+                (
+                    (
+                        f'<h3>{title}'
+                        + u'</h3><p><a href="'
+                        + link
+                        + u'">'
+                        + readable_link
+                        + u'</a><br/><strong>'
+                    )
+                    + subtext
+                )
+                + u'</strong></p>'
+            )
+            + title_content
+        ) + u'<br/>'
+
         body = body + comments
-        return u'<html><title>' + title + u'</title><body>' + body + '</body></html>'
+        return f'<html><title>{title}</title><body>{body}</body></html>'
 
     def parse_feeds(self):
         a = super(HNWithCommentsLink, self).parse_feeds()
@@ -95,15 +108,21 @@ class HNWithCommentsLink(BasicNewsRecipe):
         if url.startswith('https://news.ycombinator.com'):
             content = self.get_hn_content(url)
         else:
-            # TODO: use content-type header instead of url
-            is_image = False
-            for ext in ['.jpg', '.png', '.svg', '.gif', '.jpeg', '.tiff', '.bmp', ]:
-                if url.endswith(ext):
-                    is_image = True
-                    break
+            is_image = any(
+                url.endswith(ext)
+                for ext in [
+                    '.jpg',
+                    '.png',
+                    '.svg',
+                    '.gif',
+                    '.jpeg',
+                    '.tiff',
+                    '.bmp',
+                ]
+            )
 
             if is_image:
-                self.log('using image_content (' + url + ')')
+                self.log(f'using image_content ({url})')
                 content = u'<html><body><img src="' + url + u'"></body></html>'
             else:
                 content = self.get_readable_content(url)
@@ -124,9 +143,7 @@ class HNWithCommentsLink(BasicNewsRecipe):
         return self.temp_files[-1].name
 
     def is_link_wanted(self, url, tag):
-        if url.endswith('.pdf'):
-            return False
-        return True
+        return not url.endswith('.pdf')
 
     def prettyify_url(self, url):
         return urlparse(url).hostname

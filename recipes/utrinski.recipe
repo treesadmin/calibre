@@ -70,7 +70,7 @@ class UtrinskiVesnik(BasicNewsRecipe):
                 # href
                 articleTitle = sectionArticle.contents[0].string.strip()
                 articleUrl = self.INDEX + sectionArticle['href'].strip()
-                articleDate = datetime.datetime.today().strftime('%d.%m.%Y')
+                articleDate = datetime.datetime.now().strftime('%d.%m.%Y')
                 articles.append(
                     {'title': articleTitle, 'url': articleUrl, 'description': '', 'date': articleDate})
             if articles:
@@ -78,5 +78,5 @@ class UtrinskiVesnik(BasicNewsRecipe):
         return feeds
 
     def get_cover_url(self):
-        datum = datetime.datetime.today().strftime('%d_%m_%Y')
-        return 'http://www.utrinski.com.mk/WBStorage/Files/' + datum + '.jpg'
+        datum = datetime.datetime.now().strftime('%d_%m_%Y')
+        return f'http://www.utrinski.com.mk/WBStorage/Files/{datum}.jpg'

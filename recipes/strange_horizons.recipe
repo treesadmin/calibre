@@ -70,8 +70,7 @@ class StrangeHorizons(BasicNewsRecipe):
             "div", attrs={"class": "current-issue-widget issue-medium issue"}
         )
         url = dateDiv.a["href"]
-        date = url.split('/')[-2]
-        return date
+        return url.split('/')[-2]
 
     def parse_index(self):
         # Change this to control what issue to grab.  Must be of the format
@@ -80,7 +79,7 @@ class StrangeHorizons(BasicNewsRecipe):
 
         dateStr = self.get_date()
 
-        issueUrl = "http://strangehorizons.com/issue/%s/" % dateStr
+        issueUrl = f"http://strangehorizons.com/issue/{dateStr}/"
         soup = self.index_to_soup(issueUrl)
 
         sections = OrderedDict()

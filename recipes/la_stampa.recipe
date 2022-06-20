@@ -29,8 +29,7 @@ class LaStampa(BasicNewsRecipe):
     extra_css = ' .boxocchiello2{font-size: small} .catenaccio{font-style: italic} .titoloRub{font-size: xx-large; font-weight: bold } .titologir{font-size: xx-large; font-weight: bold } .sezione{font-weight: bold} '  # noqa
 
     def get_article_url(self, article):
-        link = article.get('links')
-        if link:
+        if link := article.get('links'):
             return link[0]['href']
 
     keep_only_tags = [

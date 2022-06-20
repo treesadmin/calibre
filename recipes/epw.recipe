@@ -8,7 +8,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 def absurl(x):
     if x.startswith('/'):
-        x = 'http://www.epw.in' + x
+        x = f'http://www.epw.in{x}'
         return x
 
 

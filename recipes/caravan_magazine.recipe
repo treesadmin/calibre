@@ -57,7 +57,7 @@ class CaravanMagazine(BasicNewsRecipe):
         )
         res = br.open(rq).read()
         res = res.decode('utf-8')
-        self.log('Login request response: {}'.format(res))
+        self.log(f'Login request response: {res}')
         res = json.loads(res)
         if res['code'] != 200 or res['message'] != "Login success":
             raise ValueError('Login failed, check your username and password')

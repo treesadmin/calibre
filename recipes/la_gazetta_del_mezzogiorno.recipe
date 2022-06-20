@@ -32,8 +32,8 @@ class AdvancedUserRecipe1324038402(BasicNewsRecipe):
             a = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'I', 'L', 'N', 'S']
             b = ['0', '.', '/', '?', '-', '=', '&',
                  '_', 'http://', '.com', 'www.']
-            for i in range(0, len(a)):
-                link = link.replace('0' + a[-i], b[-i])
+            for i in range(len(a)):
+                link = link.replace(f'0{a[-i]}', b[-i])
         return link
 
     remove_javascript = True

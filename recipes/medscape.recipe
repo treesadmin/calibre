@@ -53,11 +53,8 @@ class MedScrape(BasicNewsRecipe):
     ]
 
     def print_version(self, url):
-        # the original url is: http://www.medscape.com/viewarticle/728955?src=rss
-        # the print    url is: http://www.medscape.com/viewarticle/728955_print
-        print_url = url.partition('?')[0] + '_print'
         # print 'the printable version is: ',print_url
-        return print_url
+        return url.partition('?')[0] + '_print'
 
     def preprocess_html(self, soup):
         for item in soup.findAll(attrs={'style': True}):

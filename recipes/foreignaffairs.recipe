@@ -37,8 +37,7 @@ def get_issue_data(br, log, node_id='1126213', year='2020', volnum='99', issue_v
 
     def make_query(**kwds):
         size = kwds.pop('size', 1)
-        is_filter = kwds.pop('filter', None)
-        if is_filter:
+        if is_filter := kwds.pop('filter', None):
             q = {'filter': [{'terms': {k:v}} for k, v in kwds.items()]}
         else:
             q = {'must': [{'term': {k:v}} for k, v in kwds.items()]}
@@ -84,13 +83,9 @@ def get_issue_data(br, log, node_id='1126213', year='2020', volnum='99', issue_v
 
     def as_article(source):
         title = source['title'][0]
-        desc = ''
-        fs = source.get('field_subtitle')
-        if fs:
-            desc = fs[0]
-        aus = source.get('field_display_authors')
-        if aus:
-            desc += ' By ' + aus[0]
+        desc = fs[0] if (fs := source.get('field_subtitle')) else ''
+        if aus := source.get('field_display_authors'):
+            desc += f' By {aus[0]}'
         url = 'https://www.foreignaffairs.com' + source['path'][0]
         return {'title': title, 'description': desc, 'url': url}
 
@@ -147,8 +142,8 @@ class ForeignAffairsRecipe(BasicNewsRecipe):
         # get dates
         date = re.split(r'\s\|\s', self.tag_to_string(
             soup.head.title.string))[0]
-        self.title = "Foreign Affairs ({})".format(date)
-        self.timefmt = u' [%s]' % date
+        self.title = f"Foreign Affairs ({date})"
+        self.timefmt = f' [{date}]'
         link = soup.find('link', rel='revision', href=True)['href']
         year, volnum, issue_vol = link.split('/')[-3:]
         self.cover_url = soup.find('meta', property="og:image:secure_url")['content']
@@ -156,10 +151,9 @@ class ForeignAffairsRecipe(BasicNewsRecipe):
         cls = soup.find('body')['class']
         if isinstance(cls, (list, tuple)):
             cls = ' '.join(cls)
-        node_id = re.search(r'\bpage-node-(\d+)\b', cls).group(1)
+        node_id = re.search(r'\bpage-node-(\d+)\b', cls)[1]
         br = self.cloned_browser
-        feeds = get_issue_data(br, self.log, node_id, year, volnum, issue_vol)
-        return feeds
+        return get_issue_data(br, self.log, node_id, year, volnum, issue_vol)
 
     def clean_fa_html(self, root):
         for svg in tuple(root.iter('{*}svg')):

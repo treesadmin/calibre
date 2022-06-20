@@ -12,6 +12,8 @@ nowyobywatel.pl
 from calibre.web.feeds.news import BasicNewsRecipe
 
 
+
+
 class nowyobywatel(BasicNewsRecipe):
     __author__ = u'Łukasz Grączewski'
     title = u'Nowy Obywatel'
@@ -37,7 +39,8 @@ class nowyobywatel(BasicNewsRecipe):
         (u'Inspiracje', u'http://nowyobywatel.pl/category/inspiracje/feed/')
     ]
 
-    remove_tags = []
-    remove_tags.append(dict(attrs={'class': 'post-date'}))
-    remove_tags.append(dict(attrs={'class': 'printfriendly'}))
-    remove_tags.append(dict(attrs={'class': 'social4i'}))
+    remove_tags = [
+        dict(attrs={'class': 'post-date'}),
+        dict(attrs={'class': 'printfriendly'}),
+        dict(attrs={'class': 'social4i'}),
+    ]

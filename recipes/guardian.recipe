@@ -87,8 +87,7 @@ class Guardian(BasicNewsRecipe):
             except TypeError:
                 self.non_ie_ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.111 Safari/537.36'
         kw['user_agent'] = self.non_ie_ua
-        br = BasicNewsRecipe.get_browser(self, *a, **kw)
-        return br
+        return BasicNewsRecipe.get_browser(self, *a, **kw)
 
     def parse_section(self, url, title_prefix=''):
         feeds = []
@@ -154,8 +153,9 @@ class Guardian(BasicNewsRecipe):
                 # remove share count element
                 share_parent_div.remove(share_counts[0].getparent())
 
-            pub_date_div = root.xpath('//div//div//div//input[@id="dateToggle"]')
-            if pub_date_div:
+            if pub_date_div := root.xpath(
+                '//div//div//div//input[@id="dateToggle"]'
+            ):
                 input_elem = pub_date_div[0]
                 date_parent = input_elem.getparent()
                 # remove the input element
@@ -167,5 +167,5 @@ class Guardian(BasicNewsRecipe):
             # rebuild the html raw string
             raw = etree.tostring(root, encoding='unicode')
         except Exception as e:
-            self.log('preprocess_raw_html error -> {}'.format(e))
+            self.log(f'preprocess_raw_html error -> {e}')
         return raw

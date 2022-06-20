@@ -58,7 +58,7 @@ def process_dictionaries(src, output_dir):
             locales_from_xcu(xcu, dicts) if os.path.exists(xcu) else
             locales_from_dicts(dicts))
         if locales:
-            locale_data.update(locales)
+            locale_data |= locales
             for d in dicts:
                 shutil.copyfile(
                     d, os.path.join(output_dir, os.path.basename(d)))

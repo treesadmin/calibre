@@ -48,14 +48,14 @@ class TechnologyReviewDe(BasicNewsRecipe):
     def get_cover_url(self):
         self.cover_url = ''
         soup = self.index_to_soup('http://www.heise.de/tr/magazin/')
-        img = soup.find('img', alt=re.compile(
-            'Titelbild Technology Review'), src=True)
-        if img:
+        if img := soup.find(
+            'img', alt=re.compile('Titelbild Technology Review'), src=True
+        ):
             self.cover_url = 'http://www.heise.de' + img['src']
         return self.cover_url
 
     def print_version(self, url):
-        return url + '?view=print'
+        return f'{url}?view=print'
 
     def preprocess_html(self, soup):
         # remove style attributes

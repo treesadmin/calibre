@@ -60,7 +60,7 @@ class OGlobo(BasicNewsRecipe):
     ]
 
     def print_version(self, url):
-        return url + '?service=print'
+        return f'{url}?service=print'
 
     def preprocess_html(self, soup):
         for item in soup.findAll(style=True):

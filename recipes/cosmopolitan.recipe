@@ -60,7 +60,6 @@ class General(BasicNewsRecipe):
     def get_cover_url(self):
         index = 'http://www.cosmohispano.com/revista'
         soup = self.index_to_soup(index)
-        link_item = soup.find('img', attrs={'class': 'img_portada'})
-        if link_item:
+        if link_item := soup.find('img', attrs={'class': 'img_portada'}):
             cover_url = "http://www.cosmohispano.com" + link_item['src']
         return cover_url

@@ -51,12 +51,10 @@ class GUI(Command):
             os.chdir(self.RESOURCES)
             sources, files = [], []
             for root, _, files2 in os.walk('images'):
-                for name in files2:
-                    sources.append(os.path.join(root, name))
+                sources.extend(os.path.join(root, name) for name in files2)
             if self.newer(self.QRC, sources):
                 self.info('Creating images.qrc')
-                for s in sources:
-                    files.append('<file>%s</file>'%s)
+                files.extend(f'<file>{s}</file>' for s in sources)
                 manifest = '<RCC>\n<qresource prefix="/">\n%s\n</qresource>\n</RCC>'%'\n'.join(sorted(files))
                 if not isinstance(manifest, bytes):
                     manifest = manifest.encode('utf-8')

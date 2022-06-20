@@ -90,7 +90,7 @@ class MWJournal(BasicNewsRecipe):
             'div', attrs={'class': 'box1 article publications-show'})
         ds = self.tag_to_string(ts.find('h2'))
         self.log('Found Current Issue:', ds)
-        self.timefmt = ' [%s]' % ds
+        self.timefmt = f' [{ds}]'
 
         cover = ts.find('img', src=True)
         if cover is not None:
@@ -116,7 +116,7 @@ class MWJournal(BasicNewsRecipe):
                 a = post.find('a', href=True)
                 url = a['href']
                 if url.startswith('/'):
-                    url = 'http://www.microwavejournal.com' + url
+                    url = f'http://www.microwavejournal.com{url}'
                 abstract = post.find('div', attrs={'class': 'abstract'})
                 p = abstract.find('p')
                 desc = None

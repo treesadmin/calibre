@@ -33,8 +33,7 @@ class tuttosport(BasicNewsRecipe):
 
     def print_version(self, url):
         segments = url.split('/')
-        printURL = '/'.join(segments[0:10]) + '?print'
-        return printURL
+        return '/'.join(segments[:10]) + '?print'
 
     keep_only_tags = [
         dict(name='h2', attrs={'class': 'tit_Article'}),

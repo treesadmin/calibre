@@ -38,22 +38,17 @@ class sportowefakty(BasicNewsRecipe):
 
     def get_article_url(self, article):
         link = article.get('link', None)
-        if 'utm_source' in link:
-            return link.split('?utm')[0]
-        else:
-            return link
+        return link.split('?utm')[0] if 'utm_source' in link else link
 
     def print_version(self, url):
-        print_url = url + '/drukuj'
-        return print_url
+        return f'{url}/drukuj'
 
     def preprocess_html(self, soup):
         head = soup.find('h1')
         if 'Fotorelacja' in self.tag_to_string(head):
             return None
-        else:
-            for alink in soup.findAll('a'):
-                if alink.string is not None:
-                    tstr = alink.string
-                    alink.replaceWith(tstr)
-            return soup
+        for alink in soup.findAll('a'):
+            if alink.string is not None:
+                tstr = alink.string
+                alink.replaceWith(tstr)
+        return soup

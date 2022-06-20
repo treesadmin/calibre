@@ -6,6 +6,8 @@ from datetime import datetime
 from calibre.web.feeds.news import BasicNewsRecipe
 
 
+
+
 class germanyBSI(BasicNewsRecipe):
     # Titel of the Recipe
     # title = 'News des Bundesamt für Sicherheit in der Informationstechnik'
@@ -24,8 +26,10 @@ class germanyBSI(BasicNewsRecipe):
     description = u'News from BSI'
     # add date to description so for dayly downloads you can find them easier
     # ---- can be edit by user
-    description = description + ' fetched: ' + \
-        datetime.now().strftime("%Y-%m-%d")  # %H:%M:%S")
+    description = f'{description} fetched: ' + datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+
     # Who published the content?
     publisher = u'Newsfeeds des BSI'
     # What is the content of?

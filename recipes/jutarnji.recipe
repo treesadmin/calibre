@@ -61,7 +61,7 @@ class Jutarnji(BasicNewsRecipe):
     def print_version(self, url):
         main, split, rest = url.partition('.jl')
         rmain, rsplit, rrest = main.rpartition(',')
-        return 'http://www.jutarnji.hr/ispis_clanka.jl?artid=' + rrest
+        return f'http://www.jutarnji.hr/ispis_clanka.jl?artid={rrest}'
 
     def preprocess_html(self, soup):
         soup.html['lang'] = self.lang

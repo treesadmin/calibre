@@ -197,8 +197,9 @@ class Mediapart(BasicNewsRecipe):
                         'author': ', '.join(authors),
                         'article_type': article_type,
                         'mot_cle': article_mot_cle.capitalize(),
-                        'url': 'https://www.mediapart.fr' + url,
+                        'url': f'https://www.mediapart.fr{url}',
                     }
+
 
                     webpage_article.append(summary)
                 except Exception:
@@ -267,8 +268,8 @@ class Mediapart(BasicNewsRecipe):
             today = datetime.now(timezone.utc) + timedelta(hours=1)
             wkd = today.weekday()
             french_weekday={0:'Mon',1:'Mar',2:'Mer',3:'Jeu',4:'Ven',5:'Sam',6:'Dim'}
-            day = french_weekday[wkd]+'.'
-            date = day + ' ' + today.strftime('%d %b. %Y')
+            day = f'{french_weekday[wkd]}.'
+            date = f'{day} ' + today.strftime('%d %b. %Y')
             edition = today.strftime('Édition de %Hh')
 
             # Get Cover data

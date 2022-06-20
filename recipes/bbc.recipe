@@ -19,18 +19,17 @@ def serialize_image(block):
             src = prepare_string_for_xml(media[q])
             break
     else:
-        raise ValueError('No src found in media block: {}'.format(media))
-    yield '<img src="{}" alt="{}"/>'.format(src, alt)
-    caption = block.get('caption')
-    if caption:
-        yield '<div>{}</div>'.format(prepare_string_for_xml(caption))
+        raise ValueError(f'No src found in media block: {media}')
+    yield f'<img src="{src}" alt="{alt}"/>'
+    if caption := block.get('caption'):
+        yield f'<div>{prepare_string_for_xml(caption)}</div>'
     yield '</div>'
 
 
 def block_tag(name, generator):
-    yield '<' + name + '>'
+    yield f'<{name}>'
     yield from generator
-    yield '</' + name + '>'
+    yield f'</{name}>'
 
 
 def serialize_paragraph(block):
@@ -46,14 +45,14 @@ def serialize_paragraph(block):
                 elif attr in ('italic', 'italics'):
                     styles.append('font-style: italic')
             if styles:
-                prefix = '<span style="{}">'.format('; '.join(styles))
+                prefix = f"""<span style="{'; '.join(styles)}">"""
                 suffix = '</span>'
             else:
                 prefix = suffix = ''
             yield prefix + prepare_string_for_xml(model['text']) + suffix
         elif xt == 'urlLink':
             model = x['model']
-            yield '<a href="{}">{}</a>'.format(prepare_string_for_xml(model['locator'], True), prepare_string_for_xml(model['text']))
+            yield f"""<a href="{prepare_string_for_xml(model['locator'], True)}">{prepare_string_for_xml(model['text'])}</a>"""
 
 
 def serialize_list(block):
@@ -73,7 +72,7 @@ def serialize_text(block):
         elif xt == 'orderedList':
             yield from block_tag('ol', serialize_list(x))
         else:
-            raise KeyError('Unknown block type: ' + x['type'])
+            raise KeyError('Unknown block type: ' + xt)
 
 
 def serialize_contributor(contributor):
@@ -96,10 +95,10 @@ def parse_article_json(root, abort_article):
         if has_media_experience:
             abort_article('Skipping video article')
             return
-        raise KeyError('No article found in data keys: {}'.format(data.keys()))
+        raise KeyError(f'No article found in data keys: {data.keys()}')
     lines = []
     if article.get('headline'):
-        lines.append('<h1>{}</h1>'.format(prepare_string_for_xml(article['headline'])))
+        lines.append(f"<h1>{prepare_string_for_xml(article['headline'])}</h1>")
     if article.get('contributor'):
         lines.extend(serialize_contributor(article['contributor']))
     for block in article['blocks']:

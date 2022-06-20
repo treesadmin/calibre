@@ -58,7 +58,6 @@ class IncMagazineRecipe(BasicNewsRecipe):
     def parse_index(self):
         soup = self.index_to_soup(self.INDEX)
 
-        feeds = []
         articles = []
 
         # We need for sure 'toc-top-l-column' and 'toc-bot-l-column'
@@ -73,8 +72,7 @@ class IncMagazineRecipe(BasicNewsRecipe):
                 article_title = self.tag_to_string(link)
                 article_link = link.get('href')
                 articles.append({'title': article_title, 'url': article_link})
-        feeds.append(('Articles', articles))  # TODO figure out sections
-        return feeds
+        return [('Articles', articles)]
 
     def preprocess_html(self, soup):
         for alink in soup.findAll('a'):

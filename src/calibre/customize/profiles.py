@@ -29,11 +29,13 @@ class Plugin(_Plugin):
         self.width, self.height = self.screen_size
         fsizes = list(self.fsizes)
         self.fkey = list(self.fsizes)
-        self.fsizes = []
-        for (name, num), size in zip(FONT_SIZES, fsizes):
-            self.fsizes.append((name, num, float(size)))
-        self.fnames = dict((name, sz) for name, _, sz in self.fsizes if name)
-        self.fnums = dict((num, sz) for _, num, sz in self.fsizes if num)
+        self.fsizes = [
+            (name, num, float(size))
+            for (name, num), size in zip(FONT_SIZES, fsizes)
+        ]
+
+        self.fnames = {name: sz for name, _, sz in self.fsizes if name}
+        self.fnums = {num: sz for _, num, sz in self.fsizes if num}
         self.width_pts = self.width * 72./self.dpi
         self.height_pts = self.height * 72./self.dpi
 

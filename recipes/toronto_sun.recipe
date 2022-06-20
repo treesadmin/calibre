@@ -65,8 +65,7 @@ class TorontoSun(BasicNewsRecipe):
     def preprocess_html(self, soup):
         # To fetch images from the specified source
         for img in soup.findAll('img', src=True):
-            url = img.get('src').split('?')[-1].partition('=')[-1]
-            if url:
+            if url := img.get('src').split('?')[-1].partition('=')[-1]:
                 img['src'] = url.split('&')[0].partition('=')[0]
                 img['width'] = url.split(
                     '&')[-1].partition('=')[-1].split('x')[0]

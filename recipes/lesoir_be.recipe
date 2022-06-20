@@ -46,6 +46,4 @@ class LeSoirBe(BasicNewsRecipe):
     ]
 
     def get_cover_url(self):
-        cover_url = strftime(
-            'http://pdf.lesoir.be/pdf/%Y-%m-%d_BRUX_UNE_1.PDF')
-        return cover_url
+        return strftime('http://pdf.lesoir.be/pdf/%Y-%m-%d_BRUX_UNE_1.PDF')

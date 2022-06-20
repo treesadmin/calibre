@@ -39,8 +39,7 @@ class FirstThings(BasicNewsRecipe):
         soup = self.index_to_soup(self.INDEX)
         cover = soup.find('a', 'cover-link')
         if cover is not None:
-            img = cover
-            if img:
+            if img := cover:
                 self.cover_url = img['href']
         current_section, current_articles = 'Cover Story', []
         feeds = []
@@ -57,7 +56,7 @@ class FirstThings(BasicNewsRecipe):
                 url = a['href']
                 desc = ''
                 if url.startswith('/'):
-                    url = 'https://www.firstthings.com/' + url
+                    url = f'https://www.firstthings.com/{url}'
                 elif div.name == 'a' and div.rel == 'author':
                     desc = self.tag_to_string(div)
                 current_articles.append(

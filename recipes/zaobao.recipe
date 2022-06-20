@@ -98,7 +98,7 @@ class ZAOBAO(BasicNewsRecipe):
         self.log(_('ZAOBAO overrided parse_feeds()'))
         parsed_feeds = BasicNewsRecipe.parse_feeds(self)
 
-        for id, obj in enumerate(self.INDEXES):
+        for obj in self.INDEXES:
             title, url = obj
             articles = []
             soup = self.index_to_soup(url)
@@ -133,7 +133,7 @@ class ZAOBAO(BasicNewsRecipe):
                              (article.title, article.url))
                 self.log(_('added feed %s') % (feed.title))
 
-        for i, feed in enumerate(parsed_feeds):
+        for feed in parsed_feeds:
             # workaorund a strange problem: Somethimes the xml encoding is not
             # apllied correctly by parse()
             weired_encoding_detected = False

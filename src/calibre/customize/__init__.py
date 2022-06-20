@@ -286,28 +286,29 @@ class Plugin(object):  # {{{
             with plugin:
                 import something
         '''
-        if self.plugin_path is not None:
-            from calibre.utils.zipfile import ZipFile
-            from importlib.machinery import EXTENSION_SUFFIXES
-            with ZipFile(self.plugin_path) as zf:
-                extensions = {x.lower() for x in EXTENSION_SUFFIXES}
-                zip_safe = True
-                for name in zf.namelist():
-                    for q in extensions:
-                        if name.endswith(q):
-                            zip_safe = False
-                            break
-                    if not zip_safe:
+        if self.plugin_path is None:
+            return
+        from calibre.utils.zipfile import ZipFile
+        from importlib.machinery import EXTENSION_SUFFIXES
+        with ZipFile(self.plugin_path) as zf:
+            extensions = {x.lower() for x in EXTENSION_SUFFIXES}
+            zip_safe = True
+            for name in zf.namelist():
+                for q in extensions:
+                    if name.endswith(q):
+                        zip_safe = False
                         break
-                if zip_safe:
-                    sys.path.append(self.plugin_path)
-                    self.sys_insertion_path = self.plugin_path
-                else:
-                    from calibre.ptempfile import TemporaryDirectory
-                    self._sys_insertion_tdir = TemporaryDirectory('plugin_unzip')
-                    self.sys_insertion_path = self._sys_insertion_tdir.__enter__(*args)
-                    zf.extractall(self.sys_insertion_path)
-                    sys.path.append(self.sys_insertion_path)
+                if not zip_safe:
+                    break
+            if zip_safe:
+                sys.path.append(self.plugin_path)
+                self.sys_insertion_path = self.plugin_path
+            else:
+                from calibre.ptempfile import TemporaryDirectory
+                self._sys_insertion_tdir = TemporaryDirectory('plugin_unzip')
+                self.sys_insertion_path = self._sys_insertion_tdir.__enter__(*args)
+                zf.extractall(self.sys_insertion_path)
+                sys.path.append(self.sys_insertion_path)
 
     def __exit__(self, *args):
         ip, it = getattr(self, 'sys_insertion_path', None), getattr(self,
@@ -323,8 +324,9 @@ class Plugin(object):  # {{{
         interface. It is called when the user does: calibre-debug -r "Plugin
         Name". Any arguments passed are present in the args variable.
         '''
-        raise NotImplementedError('The %s plugin has no command line interface'
-                                  %self.name)
+        raise NotImplementedError(
+            f'The {self.name} plugin has no command line interface'
+        )
 
 # }}}
 
@@ -505,10 +507,7 @@ class CatalogPlugin(Plugin):  # {{{
         '''
         Custom fields sort after standard fields
         '''
-        if key.startswith('#'):
-            return '~%s' % key[1:]
-        else:
-            return key
+        return f'~{key[1:]}' if key.startswith('#') else key
 
     def search_sort_db(self, db, opts):
 
@@ -529,7 +528,7 @@ class CatalogPlugin(Plugin):  # {{{
         for field in list(all_custom_fields):
             fm = db.field_metadata[field]
             if fm['datatype'] == 'series':
-                all_custom_fields.add(field+'_index')
+                all_custom_fields.add(f'{field}_index')
         all_fields = all_std_fields.union(all_custom_fields)
 
         if opts.fields != 'all':
@@ -541,7 +540,7 @@ class CatalogPlugin(Plugin):  # {{{
             if requested_fields - all_fields:
                 from calibre.library import current_library_name
                 invalid_fields = sorted(list(requested_fields - all_fields))
-                print("invalid --fields specified: %s" % ', '.join(invalid_fields))
+                print(f"invalid --fields specified: {', '.join(invalid_fields)}")
                 print("available fields in '%s': %s" %
                       (current_library_name(), ', '.join(sorted(list(all_fields)))))
                 raise ValueError("unable to generate catalog with specified fields")
@@ -566,8 +565,11 @@ class CatalogPlugin(Plugin):  # {{{
         from calibre.customize.ui import config
         from calibre.ptempfile import PersistentTemporaryDirectory
 
-        if not type(self) in builtin_plugins and self.name not in config['disabled_plugins']:
-            files_to_copy = ["%s.%s" % (self.name.lower(),ext) for ext in ["ui","py"]]
+        if (
+            type(self) not in builtin_plugins
+            and self.name not in config['disabled_plugins']
+        ):
+            files_to_copy = [f"{self.name.lower()}.{ext}" for ext in ["ui","py"]]
             resources = zipfile.ZipFile(self.plugin_path,'r')
 
             if self.resources_path is None:
@@ -577,7 +579,10 @@ class CatalogPlugin(Plugin):  # {{{
                 try:
                     resources.extract(file, self.resources_path)
                 except:
-                    print(" customize:__init__.initialize(): %s not found in %s" % (file, os.path.basename(self.plugin_path)))
+                    print(
+                        f" customize:__init__.initialize(): {file} not found in {os.path.basename(self.plugin_path)}"
+                    )
+
                     continue
             resources.close()
 

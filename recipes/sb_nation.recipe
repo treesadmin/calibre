@@ -53,5 +53,6 @@ class SBNation(BasicNewsRecipe):
 
     def populate_article_metadata(self, article, soup, first):
         h2 = soup.find('h2')
-        h2.replaceWith(h2.prettify() + '<p><em> By ' +
-                       article.author + '</em></p>')
+        h2.replaceWith(
+            ((f'{h2.prettify()}<p><em> By ' + article.author) + '</em></p>')
+        )

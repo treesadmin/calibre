@@ -35,27 +35,24 @@ def process_inline_text(lines, block, data):
             tn = fmt['typename']
             if tn == 'LinkFormat':
                 ab = data[fmt['id']]
-                text = '<a href="{}" title="{}">{}</a>'.format(ab['url'], ab.get('title') or '', text)
+                text = f"""<a href="{ab['url']}" title="{ab.get('title') or ''}">{text}</a>"""
             elif tn == 'BoldFormat':
-                text = '<b>' + text + '</b>'
+                text = f'<b>{text}</b>'
         lines.append(text)
 
 
 def process_paragraph(lines, block, data, content_key='content'):
     tn = block['__typename']
     m = re.match(r'Heading([1-6])Block', tn)
-    if m is not None:
-        tag = 'h' + m.group(1)
-    else:
-        tag = 'p'
+    tag = 'h' + m[1] if m is not None else 'p'
     ta = block.get('textAlign') or 'LEFT'
-    style = 'text-align: {}'.format(ta.lower())
-    lines.append('<{} style="{}">'.format(tag, style))
+    style = f'text-align: {ta.lower()}'
+    lines.append(f'<{tag} style="{style}">')
     for item in block[content_key]:
         tn = item['typename']
         if tn in ('TextInline', 'Byline'):
             process_inline_text(lines, data[item['id']], data)
-    lines.append('</' + tag + '>')
+    lines.append(f'</{tag}>')
 
 
 def process_timestamp(lines, block, data):
@@ -65,23 +62,18 @@ def process_timestamp(lines, block, data):
 
 
 def process_header(lines, block, data):
-    label = block.get('label')
-    if label:
+    if label := block.get('label'):
         process_paragraph(lines, data[label['id']], data)
-    headline = block.get('headline')
-    if headline:
+    if headline := block.get('headline'):
         process_paragraph(lines, data[headline['id']], data)
-    summary = block.get('summary')
-    if summary:
+    if summary := block.get('summary'):
         process_paragraph(lines, data[summary['id']], data)
     lm = block.get('ledeMedia')
     if lm and lm.get('typename') == 'ImageBlock':
         process_image_block(lines, data[lm['id']], data)
-    byline = block.get('byline')
-    if byline:
+    if byline := block.get('byline'):
         process_paragraph(lines, data[byline['id']], data, content_key='bylines')
-    timestamp = block.get('timestampBlock')
-    if timestamp:
+    if timestamp := block.get('timestampBlock'):
         process_timestamp(lines, data[timestamp['id']], data)
 
 
@@ -94,7 +86,7 @@ def process_image_block(lines, block, data):
     crops = key_startswith('crops({', media)
     renditions = data[crops[0]['id']]['renditions']
     img = data[renditions[0]['id']]['url']
-    lines.append('<div style="text-align: center"><img src={}/>'.format(quoteattr(img)))
+    lines.append(f'<div style="text-align: center"><img src={quoteattr(img)}/>')
     lines.extend(caption_lines)
     lines.append('</div>')
 
@@ -132,7 +124,7 @@ def classes(classes):
 
 def absolutize(url):
     if url.startswith('/'):
-        url = 'https://www.nytimes.com' + url
+        url = f'https://www.nytimes.com{url}'
     return url
 
 
@@ -148,8 +140,7 @@ class NewYorkTimesBookReview(BasicNewsRecipe):
     encoding = 'utf-8'
 
     def preprocess_raw_html(self, raw_html, url):
-        html = extract_html(self.index_to_soup(raw_html))
-        return html
+        return extract_html(self.index_to_soup(raw_html))
 
     def parse_index(self):
         soup = self.index_to_soup(
@@ -166,8 +157,7 @@ class NewYorkTimesBookReview(BasicNewsRecipe):
                 title = self.tag_to_string(a)
                 url = absolutize(a['href'])
                 desc = ''
-                p = h2.findNextSibling('p')
-                if p:
+                if p := h2.findNextSibling('p'):
                     desc = self.tag_to_string(p)
                 main_articles.append(
                     {'title': title, 'url': url, 'description': desc})

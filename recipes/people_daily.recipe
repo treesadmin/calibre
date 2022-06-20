@@ -81,8 +81,7 @@ class AdvancedUserRecipe1277129332(BasicNewsRecipe):
     ]
 
     def append_page(self, soup, appendtag, position):
-        pager = soup.find('img', attrs={'src': '/img/next_b.gif'})
-        if pager:
+        if pager := soup.find('img', attrs={'src': '/img/next_b.gif'}):
             nexturl = self.INDEX + pager.a['href']
             soup2 = self.index_to_soup(nexturl)
             texttag = soup2.find('div', attrs={'class': 'text_c'})
@@ -115,8 +114,29 @@ class AdvancedUserRecipe1277129332(BasicNewsRecipe):
         year = time.strftime('%Y')
         month = time.strftime('%m')
         day = time.strftime('%d')
-        cover = 'http://paper.people.com.cn/rmrb/page/' + year + '-' + \
-            month + '/' + day + '/01/RMRB' + year + month + day + 'B001_b.jpg'
+        cover = (
+            (
+                (
+                    (
+                        (
+                            (
+                                (
+                                    f'http://paper.people.com.cn/rmrb/page/{year}-'
+                                    + month
+                                )
+                                + '/'
+                            )
+                            + day
+                        )
+                        + '/01/RMRB'
+                    )
+                    + year
+                )
+                + month
+            )
+            + day
+        ) + 'B001_b.jpg'
+
         br = BasicNewsRecipe.get_browser(self)
         try:
             br.open(cover)

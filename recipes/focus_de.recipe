@@ -49,7 +49,7 @@ class AdvancedUserRecipe1305567197(BasicNewsRecipe):
                  .caption {font-size: 0.6em}'
 
     def print_version(self, url):
-        return url + '?drucken=1'
+        return f'{url}?drucken=1'
 
     def preprocess_html(self, soup):
         # remove useless references to videos

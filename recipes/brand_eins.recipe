@@ -64,15 +64,14 @@ class BrandEins(BasicNewsRecipe):
         issue_list = soup.findAll('div', attrs={'class': 'details'})
 
         issue_map = {}
-        i = 0
-        for entry in issue_list:
+        for i, entry in enumerate(issue_list):
             title = self.tag_to_string(entry.find(
                 'h3', attrs={'class': 'like-h1'}))
             issue_string = self.tag_to_string(
                 entry.find('span', attrs={'class': 'meta'}))
             year = issue_string[8:]
             month = issue_string[5:-5]
-            yyyymm = "{}{}".format(year, month)
+            yyyymm = f"{year}{month}"
             link = entry.findAll('a')[0]
             issue_map[yyyymm] = link.get('href')
             self.log('- ', year, month, title, link.get('href'))
@@ -83,9 +82,7 @@ class BrandEins(BasicNewsRecipe):
 
             if issue == "" and i == 3:
                 issue = yyyymm
-            i += 1
-
-        url = 'http://brandeins.de/' + issue_map[issue]
+        url = f'http://brandeins.de/{issue_map[issue]}'
         self.log('Issue to get: ', issue, title, url)
         self.issue_url = url  # save to extract cover
 
@@ -105,9 +102,7 @@ class BrandEins(BasicNewsRecipe):
                 item.find(attrs={'class': 'ihv_page_category'}).findAll('span')[-1])
             if sec not in feeds:
                 feeds[sec] = []
-            desc = ''
-            for p in item.findAll('p'):
-                desc += self.tag_to_string(p)
+            desc = ''.join(self.tag_to_string(p) for p in item.findAll('p'))
             feeds[sec].append(
                 {'title': title, 'url': url, 'description': desc})
             self.log('Found article:', title, 'at', url)
@@ -117,12 +112,11 @@ class BrandEins(BasicNewsRecipe):
     def get_cover_url(self):
         # the index does not contain a usable cover, but the 'Welt in
         # Zahlen'-article contains it
-        cover_article = "{}{}".format(
-            self.issue_url, 'die-welt-in-zahlen.html')
-        self.log('Cover article URL: %s' % cover_article)
+        cover_article = f"{self.issue_url}die-welt-in-zahlen.html"
+        self.log(f'Cover article URL: {cover_article}')
         soup = self.index_to_soup(cover_article)
         img = soup.find('section', 'asideSection no-content').find('img')
-        self.log('Found cover image url: %s' % img['src'])
+        self.log(f"Found cover image url: {img['src']}")
         return (self.PREFIX + img['src'])
 
     def preprocess_raw_html(self, raw_html, url):

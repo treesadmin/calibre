@@ -11,6 +11,8 @@ www.plusinfo.mk
 from calibre.web.feeds.news import BasicNewsRecipe
 
 
+
+
 class PlusInfo(BasicNewsRecipe):
 
     INDEX = 'www.plusinfo.mk'
@@ -28,11 +30,15 @@ class PlusInfo(BasicNewsRecipe):
     oldest_article = 1
     max_articles_per_feed = 100
 
-    remove_tags = []
-    remove_tags.append(
-        dict(name='div', attrs={'class': ['komentari_holder', 'objava', 'koment']}))
-    remove_tags.append(dict(name='ul', attrs={'class': ['vest_meni']}))
-    remove_tags.append(dict(name='a', attrs={'name': ['fb_share']}))
+    remove_tags = [
+        dict(
+            name='div',
+            attrs={'class': ['komentari_holder', 'objava', 'koment']},
+        ),
+        dict(name='ul', attrs={'class': ['vest_meni']}),
+        dict(name='a', attrs={'name': ['fb_share']}),
+    ]
+
     keep_only_tags = [dict(name='div', attrs={'class': 'vest1'})]
 
     feeds = [(u'Македонија', u'http://www.plusinfo.mk/rss/makedonija'),

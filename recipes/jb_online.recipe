@@ -38,8 +38,7 @@ class JBOnline(BasicNewsRecipe):
               u'http://jbonline.terra.com.br/extra/rsstrjb.xml')]
 
     def preprocess_html(self, soup):
-        ifr = soup.find('iframe')
-        if ifr:
+        if ifr := soup.find('iframe'):
             ifr.extract()
         for item in soup.findAll(style=True):
             del item['style']

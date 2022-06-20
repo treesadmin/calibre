@@ -62,14 +62,17 @@ class General(BasicNewsRecipe):
     ]
 
     def get_cover_url(self):
-        cover_url = None
         index = 'https://www.elpais.com.uy/impresa/'
         soup = self.index_to_soup(index)
-        link_item = soup.find('a', attrs={'class': 'page-link link-module'})
-        # print link_item
-        if link_item:
-            cover_url = 'https://www.elpais.com.uy' + link_item.get('href')
-        return cover_url
+        return (
+            'https://www.elpais.com.uy' + link_item.get('href')
+            if (
+                link_item := soup.find(
+                    'a', attrs={'class': 'page-link link-module'}
+                )
+            )
+            else None
+        )
 
     def preprocess_html(self, soup):
         for item in soup.findAll(style=True):

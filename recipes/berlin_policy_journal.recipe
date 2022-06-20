@@ -106,5 +106,5 @@ class BerlinPolicyJournal(BasicNewsRecipe):
         for entry in div.findAll('span', {'class': 'entry-author'}):
             authors = authors + entry.a.span.renderContents().decode('utf-8').strip() + ', '
         date = div.find('time').renderContents().decode('utf-8').strip()
-        div.replaceWith('<div>' + date + ' | ' + authors[:-2] + '<br/></div>')
+        div.replaceWith(f'<div>{date} | {authors[:-2]}<br/></div>')
         return soup

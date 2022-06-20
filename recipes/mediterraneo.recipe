@@ -89,10 +89,14 @@ class elperiodicomediterraneo(BasicNewsRecipe):
     def get_cover_url(self):
         index = 'http://pdf.elperiodicomediterraneo.com/edicion.php'
         soup = self.index_to_soup(index)
-        for image in soup.findAll('img', src=True):
-            if image['src'].startswith('/funciones/img-public.php?key='):
-                return 'http://pdf.elperiodicomediterraneo.com' + image['src']
-        return None
+        return next(
+            (
+                'http://pdf.elperiodicomediterraneo.com' + image['src']
+                for image in soup.findAll('img', src=True)
+                if image['src'].startswith('/funciones/img-public.php?key=')
+            ),
+            None,
+        )
 
     extra_css = '''
                     h1 {font-family:Arial,Helvetica,sans-serif; font-weight:bold;font-size:28px;}

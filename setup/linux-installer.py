@@ -116,37 +116,33 @@ class TerminalController:  # {{{
             (attrib, cap_name) = capability.split('=')
             setattr(self, attrib, self._escape_code(self._tigetstr(cap_name)))
 
-        # Colors
-        set_fg = self._tigetstr('setf')
-        if set_fg:
+        if set_fg := self._tigetstr('setf'):
             if not isinstance(set_fg, bytes):
                 set_fg = set_fg.encode('utf-8')
             for i,color in zip(range(len(self._COLORS)), self._COLORS):
                 setattr(self, color,
                         self._escape_code(curses.tparm((set_fg), i)))
-        set_fg_ansi = self._tigetstr('setaf')
-        if set_fg_ansi:
+        if set_fg_ansi := self._tigetstr('setaf'):
             if not isinstance(set_fg_ansi, bytes):
                 set_fg_ansi = set_fg_ansi.encode('utf-8')
             for i,color in zip(range(len(self._ANSICOLORS)), self._ANSICOLORS):
                 setattr(self, color,
                         self._escape_code(curses.tparm((set_fg_ansi),
                             i)))
-        set_bg = self._tigetstr('setb')
-        if set_bg:
+        if set_bg := self._tigetstr('setb'):
             if not isinstance(set_bg, bytes):
                 set_bg = set_bg.encode('utf-8')
-            for i,color in zip(range(len(self._COLORS)), self._COLORS):
-                setattr(self, 'BG_'+color,
-                        self._escape_code(curses.tparm((set_bg), i)))
-        set_bg_ansi = self._tigetstr('setab')
-        if set_bg_ansi:
+            for i, color in zip(range(len(self._COLORS)), self._COLORS):
+                setattr(self, f'BG_{color}', self._escape_code(curses.tparm((set_bg), i)))
+        if set_bg_ansi := self._tigetstr('setab'):
             if not isinstance(set_bg_ansi, bytes):
                 set_bg_ansi = set_bg_ansi.encode('utf-8')
-            for i,color in zip(range(len(self._ANSICOLORS)), self._ANSICOLORS):
-                setattr(self, 'BG_'+color,
-                        self._escape_code(curses.tparm((set_bg_ansi),
-                            i)))
+            for i, color in zip(range(len(self._ANSICOLORS)), self._ANSICOLORS):
+                setattr(
+                    self,
+                    f'BG_{color}',
+                    self._escape_code(curses.tparm((set_bg_ansi), i)),
+                )
 
     def _escape_code(self, raw):
         if not raw:
@@ -170,10 +166,7 @@ class TerminalController:  # {{{
 
     def _render_sub(self, match):
         s = match.group()
-        if s == '$$':
-            return s
-        else:
-            return getattr(self, s[2:-1])
+        return s if s == '$$' else getattr(self, s[2:-1])
 
 
 class ProgressBar:
@@ -233,7 +226,7 @@ class Reporter:  # {{{
 
     def __init__(self, fname):
         try:
-            self.pb  = ProgressBar(TerminalController(), 'Downloading '+fname)
+            self.pb = ProgressBar(TerminalController(), f'Downloading {fname}')
         except ValueError:
             prints('Downloading', fname)
             self.pb = None
@@ -287,10 +280,7 @@ class RangeHandler(BaseHandler):
 def do_download(dest):
     prints('Will download and install', os.path.basename(dest))
     reporter = Reporter(os.path.basename(dest))
-    offset = 0
-    if os.path.exists(dest):
-        offset = os.path.getsize(dest)
-
+    offset = os.path.getsize(dest) if os.path.exists(dest) else 0
     # Get content length and check if range is supported
     rq = urlopen(dl_url)
     headers = rq.info()
@@ -299,7 +289,7 @@ def do_download(dest):
     mode = 'wb'
     if accepts_ranges and offset > 0:
         req = Request(rq.geturl())
-        req.add_header('Range', 'bytes=%s-'%offset)
+        req.add_header('Range', f'bytes={offset}-')
         mode = 'ab'
         rq.close()
         handler = RangeHandler()
@@ -316,11 +306,11 @@ def do_download(dest):
     if os.path.getsize(dest) < size:
         print('Download failed, try again later')
         raise SystemExit(1)
-    prints('Downloaded %s bytes'%os.path.getsize(dest))
+    prints(f'Downloaded {os.path.getsize(dest)} bytes')
 
 
 def download_tarball():
-    fname = 'calibre-%s-i686.%s'%(calibre_version, 'txz')
+    fname = f'calibre-{calibre_version}-i686.txz'
     if is64bit:
         fname = fname.replace('i686', 'x86_64')
     tdir = tempfile.gettempdir()
@@ -333,7 +323,7 @@ def download_tarball():
     if raw is not None:
         print('Using previously downloaded', fname)
         return raw
-    cached_sigf = dest +'.signature'
+    cached_sigf = f'{dest}.signature'
     cached_sig = None
     if os.path.exists(cached_sigf):
         with open(cached_sigf, 'rb') as sigf:
@@ -369,7 +359,7 @@ def get_proxies(debug=True):
         if not proxy or '..' in proxy:
             del proxies[key]
             continue
-        if proxy.startswith(key+'://'):
+        if proxy.startswith(f'{key}://'):
             proxy = proxy[len(key)+3:]
         if key == 'https' and proxy.startswith('http://'):
             proxy = proxy[7:]
@@ -419,7 +409,9 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
         # policy among SSL implementations showed it to be a
         # reasonable choice.
         raise CertificateError(
-            "too many wildcards in certificate DNS name: " + repr(dn))
+            f"too many wildcards in certificate DNS name: {repr(dn)}"
+        )
+
 
     # speed up common case w/o wildcards
     if not wildcards:
@@ -443,9 +435,7 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
         pats.append(re.escape(leftmost).replace(r'\*', '[^.]*'))
 
     # add the remaining fragments, ignore any wildcards
-    for frag in remainder:
-        pats.append(re.escape(frag))
-
+    pats.extend(re.escape(frag) for frag in remainder)
     pat = re.compile(r'\A' + r'\.'.join(pats) + r'\Z', re.IGNORECASE)
     return pat.match(hostname)
 
@@ -612,7 +602,7 @@ def get_https_resource_securely(url, timeout=60, max_redirects=5, ssl_version=No
             c.connect()  # This is needed for proxy connections
             path = p.path or '/'
             if p.query:
-                path += '?' + p.query
+                path += f'?{p.query}'
             c.request('GET', path)
             response = c.getresponse()
             if response.status in (httplib.MOVED_PERMANENTLY, httplib.FOUND, httplib.SEE_OTHER):
@@ -620,7 +610,7 @@ def get_https_resource_securely(url, timeout=60, max_redirects=5, ssl_version=No
                     raise ValueError('Too many redirects, giving up')
                 newurl = response.getheader('Location', None)
                 if newurl is None:
-                    raise ValueError('%s returned a redirect response with no Location header' % url)
+                    raise ValueError(f'{url} returned a redirect response with no Location header')
                 return get_https_resource_securely(
                     newurl, timeout=timeout, max_redirects=max_redirects-1, ssl_version=ssl_version)
             if response.status != httplib.OK:
@@ -639,7 +629,10 @@ def extract_tarball(raw, destdir):
         p.stdin.write(raw)
         p.stdin.close()
         if p.wait() != 0:
-            prints('Extracting of application files failed with error code: %s' % p.returncode)
+            prints(
+                f'Extracting of application files failed with error code: {p.returncode}'
+            )
+
             raise SystemExit(1)
 
 
@@ -648,9 +641,18 @@ def get_tarball_info(version):
     print('Downloading tarball signature securely...')
     if version:
         signature = get_https_resource_securely(
-                'https://code.calibre-ebook.com/signatures/calibre-' + version + '-' + ('x86_64' if is64bit else 'i686') + '.txz.sha512')
+            f'https://code.calibre-ebook.com/signatures/calibre-{version}-'
+            + ('x86_64' if is64bit else 'i686')
+            + '.txz.sha512'
+        )
+
         calibre_version = version
-        dl_url = 'https://download.calibre-ebook.com/' + version + '/calibre-' + version + '-' + ('x86_64' if is64bit else 'i686') + '.txz'
+        dl_url = (
+            f'https://download.calibre-ebook.com/{version}/calibre-{version}-'
+            + ('x86_64' if is64bit else 'i686')
+            + '.txz'
+        )
+
     else:
         raw = get_https_resource_securely(
                 'https://code.calibre-ebook.com/tarball-info/' + ('x86_64' if is64bit else 'i686'))
@@ -671,7 +673,7 @@ def download_and_extract(destdir, version):
         shutil.rmtree(destdir)
     os.makedirs(destdir)
 
-    print('Extracting files to %s ...'%destdir)
+    print(f'Extracting files to {destdir} ...')
     extract_tarball(raw, destdir)
 
 
@@ -688,10 +690,9 @@ def run_installer(install_dir, isolated, bin_dir, share_dir, version):
         prints('a location like /opt or /usr/local')
         return 1
     destdir = os.path.realpath(os.path.join(destdir, 'calibre'))
-    if os.path.exists(destdir):
-        if not os.path.isdir(destdir):
-            prints(destdir, 'exists and is not a directory. Choose a location like /opt or /usr/local')
-            return 1
+    if os.path.exists(destdir) and not os.path.isdir(destdir):
+        prints(destdir, 'exists and is not a directory. Choose a location like /opt or /usr/local')
+        return 1
     print('Installing to', destdir)
 
     download_and_extract(destdir, version)
@@ -768,7 +769,13 @@ def update_intaller_wrapper():
     wrapper = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'linux-installer.sh')
     with open(wrapper, 'r+b') as f:
         raw = f.read().decode('utf-8')
-        nraw = re.sub(r'^# HEREDOC_START.+^# HEREDOC_END', lambda m: '# HEREDOC_START\n{}\n# HEREDOC_END'.format(src), raw, flags=re.MULTILINE | re.DOTALL)
+        nraw = re.sub(
+            r'^# HEREDOC_START.+^# HEREDOC_END',
+            lambda m: f'# HEREDOC_START\n{src}\n# HEREDOC_END',
+            raw,
+            flags=re.MULTILINE | re.DOTALL,
+        )
+
         if 'update_intaller_wrapper()' not in nraw:
             raise SystemExit('regex substitute of HEREDOC failed')
         f.seek(0), f.truncate()

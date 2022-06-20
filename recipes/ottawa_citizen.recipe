@@ -158,7 +158,7 @@ class CanWestPaper(BasicNewsRecipe):
                 try:
                     br.open(cover)
                 except:
-                    daysback = daysback + 1
+                    daysback += 1
                     continue
                 break
         if daysback == 7:
@@ -208,34 +208,33 @@ class CanWestPaper(BasicNewsRecipe):
         return soup
 
     def preprocess_html(self, soup):
-        # delete empty id attributes--they screw up the TOC for unknown reasons
-        divtags = soup.findAll('div', attrs={'id': ''})
-        if divtags:
+        if divtags := soup.findAll('div', attrs={'id': ''}):
             for div in divtags:
                 del(div['id'])
 
         pgall = soup.find('div', attrs={'id': 'storyphoto'})
-        if pgall is not None:  # photo gallery perhaps
-            if (soup.find('div', attrs={'id': 'storycontent'}) is None):
-                allpics = new_tag(soup, 'div')
-                first_img = pgall.find('div', 'storyimage')
-                if first_img is not None:
-                    first_img.extract()
-                    tlist = pgall.find('div', attrs={'id': 'relatedthumbs'})
-                    if tlist is not None:
-                        for atag in tlist.findAll('a'):
-                            img = new_tag(soup, 'img')
-                            srcpre, sep, srcpost = atag.img[
-                                'src'].partition('?')
-                            img['src'] = srcpre
-                            pdesc = new_tag(soup, 'p')
-                            pdesc.insert(0, atag.img['alt'])
-                            pdesc['class'] = 'photocaption'
-                            div = new_tag(soup, 'div')
-                            div.insert(0, pdesc)
-                            div.insert(0, img)
-                            allpics.append(div)
-                pgall.replaceWith(allpics)
+        if pgall is not None and (
+            soup.find('div', attrs={'id': 'storycontent'}) is None
+        ):
+            allpics = new_tag(soup, 'div')
+            first_img = pgall.find('div', 'storyimage')
+            if first_img is not None:
+                first_img.extract()
+                tlist = pgall.find('div', attrs={'id': 'relatedthumbs'})
+                if tlist is not None:
+                    for atag in tlist.findAll('a'):
+                        img = new_tag(soup, 'img')
+                        srcpre, sep, srcpost = atag.img[
+                            'src'].partition('?')
+                        img['src'] = srcpre
+                        pdesc = new_tag(soup, 'p')
+                        pdesc.insert(0, atag.img['alt'])
+                        pdesc['class'] = 'photocaption'
+                        div = new_tag(soup, 'div')
+                        div.insert(0, pdesc)
+                        div.insert(0, img)
+                        allpics.append(div)
+            pgall.replaceWith(allpics)
 
         for pg in soup.findAll('div', attrs={'id': 'storyphoto'}):
             pg.extract()
@@ -247,7 +246,7 @@ class CanWestPaper(BasicNewsRecipe):
         ans = []
 
         def handle_article(adiv, key):
-            if adiv.name == 'h1' or adiv.name == 'h3':
+            if adiv.name in ['h1', 'h3']:
                 h1tag = adiv
             else:
                 h1tag = adiv.h1
@@ -260,10 +259,10 @@ class CanWestPaper(BasicNewsRecipe):
                     if url.startswith('/'):
                         url = self.url_prefix + url
                     if not url.startswith(self.url_prefix):
-                        print("Rejected " + url)
+                        print(f"Rejected {url}")
                         return
                     if url in self.url_list:
-                        print("Rejected dup " + url)
+                        print(f"Rejected dup {url}")
                         return
                     self.url_list.append(url)
                     title = self.tag_to_string(atag, False)
@@ -275,27 +274,26 @@ class CanWestPaper(BasicNewsRecipe):
                         return
                     dtag = adiv.find('div', 'content')
                     description = ''
-                    print("URL " + url)
-                    print("TITLE " + title)
+                    print(f"URL {url}")
+                    print(f"TITLE {title}")
                     if dtag is not None:
                         stag = dtag.span
-                        if stag is not None:
-                            if ''.join(stag['class']) != 'timestamp':
-                                description = self.tag_to_string(stag, False)
-                        else:
+                        if stag is None:
                             description = self.tag_to_string(dtag, False)
-                        print("DESCRIPTION: " + description)
+                        elif ''.join(stag['class']) != 'timestamp':
+                            description = self.tag_to_string(stag, False)
+                        print(f"DESCRIPTION: {description}")
                     if key not in articles:
                         articles[key] = []
                     articles[key].append(dict(
                         title=title, url=url, date='', description=description, author='', content=''))
 
         def parse_web_index(key, keyurl):
-            print("Section: " + key + ': ' + self.url_prefix + keyurl)
+            print(f"Section: {key}: {self.url_prefix}{keyurl}")
             try:
                 soup = self.index_to_soup(self.url_prefix + keyurl)
             except:
-                print("Section: " + key + ' NOT FOUND')
+                print(f"Section: {key} NOT FOUND")
                 return
             ans.append(key)
             mainsoup = soup.find('div', 'bodywrapper')

@@ -153,8 +153,7 @@ class TheAtlantic(BasicNewsRecipe):
             soup = self.index_to_soup(self.INDEX)
             figure = soup.find('figure', id='cover-image')
             if figure is not None:
-                img = figure.find('img', src=True)
-                if img:
+                if img := figure.find('img', src=True):
                     self.cover_url = img['src']
             current_section, current_articles = 'Cover Story', []
             feeds = []
@@ -176,7 +175,7 @@ class TheAtlantic(BasicNewsRecipe):
                             continue
                         url = a['href']
                         if url.startswith('/'):
-                            url = 'https://www.theatlantic.com' + url
+                            url = f'https://www.theatlantic.com{url}'
                         li = a.findParent(
                             'li',
                             attrs={'class': lambda x: x and 'article' in x.split()}
@@ -191,7 +190,7 @@ class TheAtlantic(BasicNewsRecipe):
                             attrs={'class': lambda x: x and 'byline' in x.split()}
                         )
                         if byline is not None:
-                            desc += ' -- ' + self.tag_to_string(byline)
+                            desc += f' -- {self.tag_to_string(byline)}'
                         self.log('\t', title, 'at', url)
                         if desc:
                             self.log('\t\t', desc)

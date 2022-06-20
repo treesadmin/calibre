@@ -75,7 +75,7 @@ def build_cache_dir():
 
 def require_git_master(branch='master'):
     if subprocess.check_output(['git', 'symbolic-ref', '--short', 'HEAD']).decode('utf-8').strip() != branch:
-        raise SystemExit('You must be in the {} git branch'.format(branch))
+        raise SystemExit(f'You must be in the {branch} git branch')
 
 
 def require_clean_git():
@@ -103,13 +103,18 @@ def initialize_constants():
     entry_points = eval(epsrc, {'__appname__': __appname__})
 
     def e2b(ep):
-        return re.search(r'\s*(.*?)\s*=', ep).group(1).strip()
+        return re.search(r'\s*(.*?)\s*=', ep)[1].strip()
 
     def e2s(ep, base='src'):
-        return (base+os.path.sep+re.search(r'.*=\s*(.*?):', ep).group(1).replace('.', '/')+'.py').strip()
+        return (
+            base
+            + os.path.sep
+            + re.search(r'.*=\s*(.*?):', ep)[1].replace('.', '/')
+            + '.py'
+        ).strip()
 
     def e2m(ep):
-        return re.search(r'.*=\s*(.*?)\s*:', ep).group(1).strip()
+        return re.search(r'.*=\s*(.*?)\s*:', ep)[1].strip()
 
     def e2f(ep):
         return ep[ep.rindex(':')+1:].strip()
@@ -163,8 +168,12 @@ class Command(object):
         if not islinux or ismacos or isfreebsd:
             return
         if self.real_user is not None:
-            self.info('Dropping privileges to those of', self.real_user+':',
-                    self.real_uid)
+            self.info(
+                'Dropping privileges to those of',
+                f'{self.real_user}:',
+                self.real_uid,
+            )
+
         if self.real_gid is not None:
             os.setegid(int(self.real_gid))
         if self.real_uid is not None:
@@ -253,15 +262,15 @@ class Command(object):
 
 def installer_name(ext, is64bit=False):
     if is64bit and ext == 'msi':
-        return 'dist/%s-64bit-%s.msi'%(__appname__, __version__)
+        return f'dist/{__appname__}-64bit-{__version__}.msi'
     if ext in ('exe', 'msi'):
-        return 'dist/%s-%s.%s'%(__appname__, __version__, ext)
+        return f'dist/{__appname__}-{__version__}.{ext}'
     if ext == 'dmg':
         if is64bit:
-            return 'dist/%s-%s-x86_64.%s'%(__appname__, __version__, ext)
-        return 'dist/%s-%s.%s'%(__appname__, __version__, ext)
+            return f'dist/{__appname__}-{__version__}-x86_64.{ext}'
+        return f'dist/{__appname__}-{__version__}.{ext}'
 
-    ans = 'dist/%s-%s-i686.%s'%(__appname__, __version__, ext)
+    ans = f'dist/{__appname__}-{__version__}-i686.{ext}'
     if is64bit:
         ans = ans.replace('i686', 'x86_64')
     return ans

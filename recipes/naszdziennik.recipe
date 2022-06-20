@@ -21,8 +21,6 @@ class naszdziennik(BasicNewsRecipe):
     def parse_index(self):
         # adres do parsowania artykułów
         soup = self.index_to_soup('http://www.naszdziennik.pl/news')
-        # deklaracja pustej listy feedów
-        feeds = []
         # deklaracja pustego słownika artykułów
         articles = {}
         # deklaracja pustej listy sekcji
@@ -61,9 +59,5 @@ class naszdziennik(BasicNewsRecipe):
             # zebrane elementy dodajemy do listy zadeklarowanej w linijce 44
             articles[section].append(
                 {'title': article_title,  'url': article_url, 'date': article_date})
-        # po dodaniu wszystkich artykułów dodajemy sekcje do listy feedów,
-        # korzystając z list sekcji znajdujących się w słowniku
-        for section in sections:
-            feeds.append((section, articles[section]))
         # zwracamy listę feedów, której parsowaniem zajmie się calibre
-        return feeds
+        return [(section, articles[section]) for section in sections]

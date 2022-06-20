@@ -39,9 +39,7 @@ class VillageVoice(BasicNewsRecipe):
         soup = self.index_to_soup(url)
         atag = soup.find('a', attrs={'href': self.url_regex})
         if atag is None:
-            self.log('Warning: no print url found for ' + url)
-        else:
-            m = self.url_regex.search(atag['href'])
-            if m:
-                url = 'http://www.villagevoice.com' + m.group(0)
+            self.log(f'Warning: no print url found for {url}')
+        elif m := self.url_regex.search(atag['href']):
+            url = f'http://www.villagevoice.com{m.group(0)}'
         return url

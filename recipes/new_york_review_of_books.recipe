@@ -18,9 +18,9 @@ def classes(classes):
 
 def absurl(url):
     if url.startswith('//'):
-        url = 'https:' + url
+        url = f'https:{url}'
     elif url.startswith('/'):
-        url = 'https://www.nybooks.com' + url
+        url = f'https://www.nybooks.com{url}'
     return url
 
 
@@ -78,7 +78,7 @@ class NewYorkReviewOfBooks(BasicNewsRecipe):
             title = self.tag_to_string(h4).strip()
             url = absurl(h4.find('a')['href'])
             author = self.tag_to_string(h4.parent.parent.find('a'))
-            title = title + ' (%s)' % author
+            title = title + f' ({author})'
             desc = ''
             div = h4
             while div.next_sibling:

@@ -34,7 +34,7 @@ class ConversionOption(object):
         Validate the parameters passed to :meth:`__init__`.
         '''
         if re.match(r'[a-zA-Z_]([a-zA-Z0-9_])*', self.name) is None:
-            raise ValueError(self.name + ' is not a valid Python identifier')
+            raise ValueError(f'{self.name} is not a valid Python identifier')
         if not self.help:
             raise ValueError('You must set the help text')
 
@@ -79,11 +79,17 @@ class OptionRecommendation(object):
     def validate_parameters(self):
         if self.option.choices and self.recommended_value not in \
                                                     self.option.choices:
-            raise ValueError('OpRec: %s: Recommended value not in choices'%
-                             self.option.name)
+            raise ValueError(
+                f'OpRec: {self.option.name}: Recommended value not in choices'
+            )
+
         if not (isinstance(self.recommended_value, (numbers.Number, bytes, unicode_type)) or self.recommended_value is None):
-            raise ValueError('OpRec: %s:'%self.option.name + repr(
-                self.recommended_value) + ' is not a string or a number')
+            raise ValueError(
+                (
+                    (f'OpRec: {self.option.name}:' + repr(self.recommended_value))
+                    + ' is not a string or a number'
+                )
+            )
 
 
 class DummyReporter(object):
@@ -231,7 +237,7 @@ class InputFormatPlugin(Plugin):
     def __call__(self, stream, options, file_ext, log,
                  accelerators, output_dir):
         try:
-            log('InputFormatPlugin: %s running'%self.name)
+            log(f'InputFormatPlugin: {self.name} running')
             if hasattr(stream, 'name'):
                 log('on', stream.name)
         except:

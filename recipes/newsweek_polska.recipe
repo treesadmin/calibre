@@ -61,37 +61,31 @@ class Newsweek(BasicNewsRecipe):
                     p.extract()
                     continue
 
-                obj = p.find('object')
-                if obj:
+                if obj := p.find('object'):
                     obj.extract()
                     continue
 
-                strong = p.find('strong')
-                if strong:
+                if strong := p.find('strong'):
                     newest = re.compile(
                         "Tekst pochodzi z najnowszego numeru Tygodnika Newsweek")
                     if newest.search(str(strong)):
                         strong.extract()
                         continue
 
-                itunes = p.find('a')
-                if itunes:
+                if itunes := p.find('a'):
                     reurl = re.compile("itunes.apple.com")
                     if reurl.search(str(itunes['href'])):
                         p.extract()
                         continue
 
-                imagedesc = p.find('div', attrs={'class': 'image-desc'})
-                if imagedesc:
+                if imagedesc := p.find('div', attrs={'class': 'image-desc'}):
                     redesc = re.compile("Okładka numeru")
                     if (redesc.search(str(imagedesc))):
                         p.extract()
                         continue
 
             # get actual contents
-            for content in article_div.contents:
-                strs.append("".join(str(content)))
-
+            strs.extend("".join(str(content)) for content in article_div.contents)
         # return contents as a string
         return u"".join(strs)
 
@@ -109,11 +103,11 @@ class Newsweek(BasicNewsRecipe):
             print("no article tag found, returning...")
             return
 
-        main_section = BeautifulSoup(matches.group(0))
+        main_section = BeautifulSoup(matches[0])
 
         if page == 0:
             title = main_section.find('h1')
-            html = html + type(u'')(title)
+            html += type(u'')(title)
 
             authors = ''
             authorBox = main_section.find('div', attrs={'class': 'AuthorBox'})
@@ -131,8 +125,7 @@ class Newsweek(BasicNewsRecipe):
         html = html + self.get_article_divs(
             '3917dc34e07c9c7180df2ea9ef103361845c8af42b71f51b960059226090a1ac', main_section)
 
-        nextPage = main_section.find('a', attrs={'class': 'next'})
-        if nextPage:
+        if nextPage := main_section.find('a', attrs={'class': 'next'}):
             html = html + self.get_article_page(br, nextPage['href'], page + 1)
 
         return html
@@ -162,7 +155,7 @@ class Newsweek(BasicNewsRecipe):
         if matches is None:
             return
 
-        subSoup = BeautifulSoup(matches.group(0))
+        subSoup = BeautifulSoup(matches[0])
         issueLinks = subSoup.findAll('a')
 
         # check if need to go back to previous year
@@ -170,12 +163,11 @@ class Newsweek(BasicNewsRecipe):
             link = issueLinks[self.BACK_ISSUES]
             self.EDITION = link['href'].replace(
                 'http://www.newsweek.pl/wydania/', '')
-            self.index_to_soup(
-                'http://www.newsweek.pl/wydania/' + self.EDITION)
+            self.index_to_soup(f'http://www.newsweek.pl/wydania/{self.EDITION}')
         else:
             self.BACK_ISSUES = self.BACK_ISSUES - len(issueLinks)
             self.YEAR = self.YEAR - 1
-            self.find_last_issue(archive_url + '/' + str(self.YEAR))
+            self.find_last_issue(f'{archive_url}/{str(self.YEAR)}')
 
     #
     # Looks for the last issue which we want to download. Then goes on each
@@ -184,26 +176,23 @@ class Newsweek(BasicNewsRecipe):
     def parse_index(self):
         archive_url = 'http://www.newsweek.pl/wydania/archiwum'
         self.find_last_issue(archive_url)
-        soup = self.index_to_soup(
-            'http://www.newsweek.pl/wydania/' + self.EDITION)
+        soup = self.index_to_soup(f'http://www.newsweek.pl/wydania/{self.EDITION}')
 
         matches = re.search(
             r'<div class="Issue-Entry">(.*)ARTICLE_BOTTOM', soup.prettify(), re.DOTALL)
         if matches is None:
             return
 
-        main_section = BeautifulSoup(matches.group(0))
+        main_section = BeautifulSoup(matches[0])
 
-        # date
-        matches = re.search(r'(\d{2}-\d{2}-\d{4})',
-                            self.tag_to_string(main_section.find('h2')))
-        if matches:
-            self.DATE = matches.group(0)
+        if matches := re.search(
+            r'(\d{2}-\d{2}-\d{4})', self.tag_to_string(main_section.find('h2'))
+        ):
+            self.DATE = matches[0]
 
         # cover
         img = main_section.find('img', src=True, alt=True, title=True)
         self.cover_url = img['src']
-        feeds = []
         articles = {}
         sections = []
 
@@ -238,28 +227,18 @@ class Newsweek(BasicNewsRecipe):
                     articles[section] = [article]
                     sections.append(section)
 
-        for section in sections:
-            #             print("%s -> %d" % (section, len(articles[section])))
-            #
-            #             for article in articles[section]:
-            #                 print(" - %s" % article)
-
-            feeds.append((section, articles[section]))
-
-        return feeds
+        return [(section, articles[section]) for section in sections]
 
     #
     # Creates each article metadata (skips locked ones). The content will
     # be extracted later by other method (get_obfuscated_article).
     #
     def create_article(self, articleLi):
-        article = {}
-
         a = articleLi.find('a')
         if a is None:
             return None
 
-        article['title'] = self.tag_to_string(a)
+        article = {'title': self.tag_to_string(a)}
         article['url'] = a['href']
         article['date'] = self.DATE
         article['description'] = ''

@@ -57,7 +57,7 @@ class SaturdayPaper(BasicNewsRecipe):
                     continue
                 url = url['href']
                 if url.startswith('/'):
-                    url = 'https://www.thesaturdaypaper.com.au' + url
+                    url = f'https://www.thesaturdaypaper.com.au{url}'
 
                 desc = a.find(class_='article__text')
                 desc = self.tag_to_string(desc)

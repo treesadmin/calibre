@@ -79,8 +79,7 @@ class Arcamax(BasicNewsRecipe):
                 (u"Zits", u"https://www.arcamax.com/thefunnies/zits"),
         ]:
             self.log('Finding strips for:', title)
-            articles = self.make_links(url, title)
-            if articles:
+            if articles := self.make_links(url, title):
                 feeds.append((title, articles))
             if self.test and len(feeds) >= self.test[0]:
                 break
@@ -103,12 +102,19 @@ class Arcamax(BasicNewsRecipe):
             title = self.tag_to_string(
                 soup.find('title')).partition('|')[0].strip()
             if 'for' not in title.split():
-                title = title + ' for today'
+                title = f'{title} for today'
             date = self.tag_to_string(
                 soup.find(name='span', attrs={'class': ['cur']}))
             self.log('\tFound:', title, 'at:', url)
             current_articles.append(
-                {'title': title, 'url': 'file://' + path, 'description': '', 'date': date})
+                {
+                    'title': title,
+                    'url': f'file://{path}',
+                    'description': '',
+                    'date': date,
+                }
+            )
+
             if self.test and len(current_articles) >= self.test[1]:
                 break
             url = prev_page_url

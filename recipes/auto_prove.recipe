@@ -64,9 +64,7 @@ class AutoPR(BasicNewsRecipe):
                 date = self.tag_to_string(article.pubDate)
                 description = self.tag_to_string(article.description)
                 link = self.tag_to_string(article.guid)
-#               print article
-                articles = self.create_links_append(link, date, description)
-                if articles:
+                if articles := self.create_links_append(link, date, description):
                     feeds.append((title, articles))
             return feeds
 

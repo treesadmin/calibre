@@ -48,9 +48,7 @@ class Stage2(Command):
                 '''{exe} -c "import subprocess; subprocess.Popen(['{exe}', './setup.py', '{x}']).wait() != 0 and'''
                 ''' input('Build of {x} failed, press Enter to exit');"'''
             ).format(exe=sys.executable, x=x)
-            session.append('title ' + x)
-            session.append('launch ' + cmd)
-
+            session.extend((f'title {x}', f'launch {cmd}'))
         p = subprocess.Popen([
             'kitty', '-o', 'enabled_layouts=vertical,stack', '-o', 'scrollback_lines=20000',
             '-o', 'close_on_child_death=y', '--session=-'
@@ -62,9 +60,7 @@ class Stage2(Command):
         for installer in installers(include_source=False):
             installer = self.j(self.d(self.SRC), installer)
             if not os.path.exists(installer) or os.path.getsize(installer) < 10000:
-                raise SystemExit(
-                    'The installer %s does not exist' % os.path.basename(installer)
-                )
+                raise SystemExit(f'The installer {os.path.basename(installer)} does not exist')
 
 
 class Stage3(Command):
@@ -122,10 +118,9 @@ class PublishBetas(Command):
 
     def run(self, opts):
         dist = self.a(self.j(self.d(self.SRC), 'dist'))
-        subprocess.check_call((
-            'rsync --partial -rh --info=progress2 --delete-after %s/ download.calibre-ebook.com:/srv/download/betas/'
-            % dist
-        ).split())
+        subprocess.check_call(
+            f'rsync --partial -rh --info=progress2 --delete-after {dist}/ download.calibre-ebook.com:/srv/download/betas/'.split()
+        )
 
 
 class Manual(Command):
@@ -161,17 +156,24 @@ class Manual(Command):
             if os.path.exists(d):
                 shutil.rmtree(d)
             os.makedirs(d)
-        jobs = []
         languages = opts.language or list(
             json.load(open(self.j(base, 'locale', 'completed.json'), 'rb'))
         )
         languages = ['en'] + list(set(languages) - {'en'})
         os.environ['ALL_USER_MANUAL_LANGUAGES'] = ' '.join(languages)
-        for language in languages:
-            jobs.append(create_job([
-                sys.executable, self.j(self.d(self.SRC), 'manual', 'build.py'),
-                language, self.j(tdir, language)
-            ], '\n\n**************** Building translations for: %s' % language))
+        jobs = [
+            create_job(
+                [
+                    sys.executable,
+                    self.j(self.d(self.SRC), 'manual', 'build.py'),
+                    language,
+                    self.j(tdir, language),
+                ],
+                '\n\n**************** Building translations for: %s' % language,
+            )
+            for language in languages
+        ]
+
         self.info('Building manual for %d languages' % len(jobs))
         subprocess.check_call(jobs[0].cmd)
         if not parallel_build(jobs[1:], self.info):
@@ -262,13 +264,15 @@ class ManPages(Command):
             os.makedirs(dest)
         except EnvironmentError:
             pass
-        jobs = []
-        for l in languages:
-            jobs.append(create_job(
+        jobs = [
+            create_job(
                 [sys.executable, self.j(base, 'build.py'), '--man-pages', l, dest],
-                '\n\n**************** Building translations for: %s' % l)
+                '\n\n**************** Building translations for: %s' % l,
             )
-        self.info('\tCreating man pages in {} for {} languages...'.format(dest, len(jobs)))
+            for l in languages
+        ]
+
+        self.info(f'\tCreating man pages in {dest} for {len(jobs)} languages...')
         subprocess.check_call(jobs[0].cmd)
         if not parallel_build(jobs[1:], self.info, verbose=False):
             raise SystemExit(1)
@@ -289,9 +293,12 @@ class ManPages(Command):
             if compress:
                 jobs = []
                 for dirpath, dirnames, filenames in os.walk('.'):
-                    for f in filenames:
-                        if f.endswith('.1'):
-                            jobs.append(create_job(['gzip', '--best', self.j(dirpath, f)], ''))
+                    jobs.extend(
+                        create_job(['gzip', '--best', self.j(dirpath, f)], '')
+                        for f in filenames
+                        if f.endswith('.1')
+                    )
+
                 if not parallel_build(jobs, self.info, verbose=False):
                     raise SystemExit(1)
         finally:

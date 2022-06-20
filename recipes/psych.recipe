@@ -6,9 +6,9 @@ from calibre.web.feeds.recipes import BasicNewsRecipe
 
 def absurl(url):
     if url.startswith("//"):
-        return "https:" + url
+        return f"https:{url}"
     if url.startswith("/"):
-        return "https://www.psychologytoday.com" + url
+        return f"https://www.psychologytoday.com{url}"
     return url
 
 
@@ -38,7 +38,7 @@ class PsychologyToday(BasicNewsRecipe):
     def parse_index(self):
         soup = self.index_to_soup('https://www.psychologytoday.com/us/magazine/archive')
         a = soup.find(**classes('magazine-thumbnail')).a
-        self.timefmt = ' [%s]' % a['title']
+        self.timefmt = f" [{a['title']}]"
         self.cover_url = absurl(a.img['src'])
         soup = self.index_to_soup(absurl(a['href']))
         articles = []

@@ -29,6 +29,6 @@ for name, src in sources.items():
             else:
                 names.extend(['-t', '0'])  # see https://bugzilla.gnome.org/show_bug.cgi?id=755200
             names.append(iname)
-        subprocess.check_call(['icotool', '-c', '--output=' + name+'.ico'] + names)
+        subprocess.check_call(['icotool', '-c', f'--output={name}.ico'] + names)
     finally:
         shutil.rmtree('ico_temp')

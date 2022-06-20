@@ -31,7 +31,7 @@ QT_PREFIX = os.path.join(PREFIX, 'qt')
 QT_DLLS, QT_PLUGINS, PYQT_MODULES = iv['QT_DLLS'], iv['QT_PLUGINS'], iv['PYQT_MODULES']
 
 APPNAME, VERSION = calibre_constants['appname'], calibre_constants['version']
-WINVER = VERSION + '.0'
+WINVER = f'{VERSION}.0'
 machine = 'X64' if is64bit else 'X86'
 j, d, a, b = os.path.join, os.path.dirname, os.path.abspath, os.path.basename
 create_installer = runpy.run_path(
@@ -142,7 +142,7 @@ def freeze(env, ext_dir, incdir):
     def copybin(x):
         shutil.copy2(x, env.dll_dir)
         with contextlib.suppress(FileNotFoundError):
-            shutil.copy2(x + '.manifest', env.dll_dir)
+            shutil.copy2(f'{x}.manifest', env.dll_dir)
 
     bindir = os.path.join(PREFIX, 'bin')
     for x in ('pdftohtml', 'pdfinfo', 'pdftoppm', 'jpegtran-calibre', 'cjpeg-calibre', 'optipng-calibre', 'JXRDecApp-calibre'):
@@ -297,10 +297,9 @@ def build_portable_installer(env):
 
     def cc(src, obj):
         cflags = '/c /EHsc /MT /W4 /Ox /nologo /D_UNICODE /DUNICODE /DPSAPI_VERSION=1'.split()
-        cflags.append(r'/I%s\include' % PREFIX)
-        cflags.append('/DUNCOMPRESSED_SIZE=%d' % usz)
+        cflags.extend((r'/I%s\include' % PREFIX, '/DUNCOMPRESSED_SIZE=%d' % usz))
         printf('Compiling', obj)
-        cmd = [CL] + cflags + ['/Fo' + obj, src]
+        cmd = [CL] + cflags + [f'/Fo{obj}', src]
         run_compiler(env, *cmd)
 
     base = d(a(__file__))
@@ -337,13 +336,13 @@ def build_portable(env):
     os.makedirs(base)
     root = d(a(__file__))
     src = j(root, 'portable.cpp')
-    obj = j(env.obj_dir, b(src) + '.obj')
+    obj = j(env.obj_dir, f'{b(src)}.obj')
     cflags = '/c /EHsc /MT /W3 /Ox /nologo /D_UNICODE /DUNICODE'.split()
 
     for exe_name in ('calibre.exe', 'ebook-viewer.exe', 'ebook-edit.exe'):
         exe = j(base, exe_name.replace('.exe', '-portable.exe'))
         printf('Compiling', exe)
-        cmd = [CL] + cflags + ['/Fo' + obj, '/Tp' + src]
+        cmd = [CL] + cflags + [f'/Fo{obj}', f'/Tp{src}']
         run_compiler(env, *cmd)
         printf('Linking', exe)
         desc = {
@@ -352,12 +351,19 @@ def build_portable(env):
             'ebook-edit.exe': 'Calibre Portable Editor'
         }[exe_name]
         cmd = [LINK] + [
-            '/INCREMENTAL:NO', '/MACHINE:' + machine,
-            '/LIBPATH:' + env.obj_dir, '/SUBSYSTEM:WINDOWS',
+            '/INCREMENTAL:NO',
+            f'/MACHINE:{machine}',
+            f'/LIBPATH:{env.obj_dir}',
+            '/SUBSYSTEM:WINDOWS',
             '/RELEASE',
             '/ENTRY:wWinMainCRTStartup',
-            '/OUT:' + exe, embed_resources(env, exe, desc=desc, product_description=desc),
-            obj, 'User32.lib', 'Shell32.lib']
+            f'/OUT:{exe}',
+            embed_resources(env, exe, desc=desc, product_description=desc),
+            obj,
+            'User32.lib',
+            'Shell32.lib',
+        ]
+
         run(*cmd)
 
     printf('Creating portable installer')
@@ -365,7 +371,7 @@ def build_portable(env):
     os.mkdir(j(base, 'Calibre Library'))
     os.mkdir(j(base, 'Calibre Settings'))
 
-    name = '%s-portable-%s.zip' % (APPNAME, VERSION)
+    name = f'{APPNAME}-portable-{VERSION}.zip'
     name = j(env.dist, name)
     with zipfile.ZipFile(name, 'w', zipfile.ZIP_STORED) as zf:
         add_dir_to_zip(zf, base, 'Calibre Portable')
@@ -413,7 +419,7 @@ def add_dir_to_zip(zf, path, prefix=''):
     Add a directory recursively to the zip file with an optional prefix.
     '''
     if prefix:
-        zi = zipfile.ZipInfo(prefix + '/')
+        zi = zipfile.ZipInfo(f'{prefix}/')
         zi.external_attr = 16
         zf.writestr(zi, '')
     cwd = os.path.abspath(os.getcwd())
@@ -433,20 +439,31 @@ def add_dir_to_zip(zf, path, prefix=''):
 def build_utils(env):
 
     def build(src, name, subsys='CONSOLE', libs='setupapi.lib'.split()):
-        printf('Building ' + name)
-        obj = j(env.obj_dir, os.path.basename(src) + '.obj')
+        printf(f'Building {name}')
+        obj = j(env.obj_dir, f'{os.path.basename(src)}.obj')
         cflags = '/c /EHsc /MD /W3 /Ox /nologo /D_UNICODE'.split()
         ftype = '/T' + ('c' if src.endswith('.c') else 'p')
-        cmd = [CL] + cflags + ['/Fo' + obj, ftype + src]
+        cmd = [CL] + cflags + [f'/Fo{obj}', ftype + src]
         run_compiler(env, *cmd)
         exe = j(env.dll_dir, name)
-        mf = exe + '.manifest'
+        mf = f'{exe}.manifest'
         with open(mf, 'wb') as f:
             f.write(EXE_MANIFEST.encode('utf-8'))
-        cmd = [LINK] + [
-            '/MACHINE:' + machine,
-            '/SUBSYSTEM:' + subsys, '/RELEASE', '/MANIFEST:EMBED', '/MANIFESTINPUT:' + mf,
-            '/OUT:' + exe] + [embed_resources(env, exe), obj] + libs
+        cmd = (
+            (
+                [LINK]
+                + [
+                    f'/MACHINE:{machine}',
+                    f'/SUBSYSTEM:{subsys}',
+                    '/RELEASE',
+                    '/MANIFEST:EMBED',
+                    f'/MANIFESTINPUT:{mf}',
+                    f'/OUT:{exe}',
+                ]
+            )
+            + [embed_resources(env, exe), obj]
+        ) + libs
+
         run(*cmd)
     base = d(a(__file__))
     build(j(base, 'file_dialogs.cpp'), 'calibre-file-dialog.exe', 'WINDOWS', 'Ole32.lib Shell32.lib'.split())
@@ -460,23 +477,44 @@ def build_launchers(env, incdir, debug=False):
     dlflags = (['/DEBUG'] if debug else ['/INCREMENTAL:NO'])
     base = d(a(__file__))
     sources = [j(base, x) for x in ['util.c', ]]
-    objects = [j(env.obj_dir, b(x) + '.obj') for x in sources]
+    objects = [j(env.obj_dir, f'{b(x)}.obj') for x in sources]
     cflags = '/c /EHsc /W3 /Ox /nologo /D_UNICODE'.split()
-    cflags += ['/DPYDLL="python%s.dll"' % env.py_ver.replace('.', ''), '/I%s/include' % env.python_base]
+    cflags += [
+        '/DPYDLL="python%s.dll"' % env.py_ver.replace('.', ''),
+        f'/I{env.python_base}/include',
+    ]
+
     cflags += [f'/I{path_to_freeze_dir()}', f'/I{incdir}']
     for src, obj in zip(sources, objects):
-        cmd = [CL] + cflags + dflags + ['/MD', '/Fo' + obj, '/Tc' + src]
+        cmd = [CL] + cflags + dflags + ['/MD', f'/Fo{obj}', f'/Tc{src}']
         run_compiler(env, *cmd)
 
     dll = j(env.obj_dir, 'calibre-launcher.dll')
     ver = '.'.join(VERSION.split('.')[:2])
-    cmd = [LINK, '/DLL', '/VERSION:' + ver, '/LTCG', '/OUT:' + dll,
-           '/nologo', '/MACHINE:' + machine] + dlflags + objects + \
-        [embed_resources(env, dll),
-            '/LIBPATH:%s/libs' % env.python_base,
-            'delayimp.lib', 'user32.lib', 'shell32.lib',
-            'python%s.lib' % env.py_ver.replace('.', ''),
-            '/delayload:python%s.dll' % env.py_ver.replace('.', '')]
+    cmd = (
+        (
+            [
+                LINK,
+                '/DLL',
+                f'/VERSION:{ver}',
+                '/LTCG',
+                f'/OUT:{dll}',
+                '/nologo',
+                f'/MACHINE:{machine}',
+            ]
+            + dlflags
+        )
+        + objects
+    ) + [
+        embed_resources(env, dll),
+        f'/LIBPATH:{env.python_base}/libs',
+        'delayimp.lib',
+        'user32.lib',
+        'shell32.lib',
+        f"python{env.py_ver.replace('.', '')}.lib",
+        f"/delayload:python{env.py_ver.replace('.', '')}.dll",
+    ]
+
     printf('Linking calibre-launcher.dll')
     run(*cmd)
 
@@ -484,7 +522,7 @@ def build_launchers(env, incdir, debug=False):
     shutil.copy2(dll, env.dll_dir)
     basenames, modules, functions = calibre_constants['basenames'], calibre_constants['modules'], calibre_constants['functions']
     for typ in ('console', 'gui', ):
-        printf('Processing %s launchers' % typ)
+        printf(f'Processing {typ} launchers')
         subsys = 'WINDOWS' if typ == 'gui' else 'CONSOLE'
         for mod, bname, func in zip(modules[typ], basenames[typ], functions[typ]):
             cflags = '/c /EHsc /MT /W3 /O1 /nologo /D_UNICODE /DUNICODE /GS-'.split()
@@ -493,24 +531,41 @@ def build_launchers(env, incdir, debug=False):
 
             cflags += ['/DMODULE=L"%s"' % mod, '/DBASENAME=L"%s"' % bname,
                        '/DFUNCTION=L"%s"' % func]
-            dest = j(env.obj_dir, bname + '.obj')
+            dest = j(env.obj_dir, f'{bname}.obj')
             printf('Compiling', bname)
-            cmd = [CL] + cflags + dflags + ['/Tc' + src, '/Fo' + dest]
+            cmd = [CL] + cflags + dflags + [f'/Tc{src}', f'/Fo{dest}']
             run_compiler(env, *cmd)
-            exe = j(env.base, bname + '.exe')
+            exe = j(env.base, f'{bname}.exe')
             lib = dll.replace('.dll', '.lib')
             u32 = ['user32.lib']
             printf('Linking', bname)
-            mf = dest + '.manifest'
+            mf = f'{dest}.manifest'
             with open(mf, 'wb') as f:
                 f.write(EXE_MANIFEST.encode('utf-8'))
-            cmd = [LINK] + [
-                '/MACHINE:' + machine, '/NODEFAULTLIB', '/ENTRY:start_here',
-                '/LIBPATH:' + env.obj_dir, '/SUBSYSTEM:' + subsys,
-                '/LIBPATH:%s/libs' % env.python_base, '/RELEASE',
-                '/MANIFEST:EMBED', '/MANIFESTINPUT:' + mf,
-                'user32.lib', 'kernel32.lib',
-                '/OUT:' + exe] + u32 + dlflags + [embed_resources(env, exe), dest, lib]
+            cmd = (
+                (
+                    (
+                        [LINK]
+                        + [
+                            f'/MACHINE:{machine}',
+                            '/NODEFAULTLIB',
+                            '/ENTRY:start_here',
+                            f'/LIBPATH:{env.obj_dir}',
+                            f'/SUBSYSTEM:{subsys}',
+                            f'/LIBPATH:{env.python_base}/libs',
+                            '/RELEASE',
+                            '/MANIFEST:EMBED',
+                            f'/MANIFESTINPUT:{mf}',
+                            'user32.lib',
+                            'kernel32.lib',
+                            f'/OUT:{exe}',
+                        ]
+                    )
+                    + u32
+                )
+                + dlflags
+            ) + [embed_resources(env, exe), dest, lib]
+
             run(*cmd)
 
 
@@ -559,11 +614,11 @@ def copy_crt_and_d3d(env):
 
 
 def sign_executables(env):
-    files_to_sign = []
-    for path in walk(env.base):
-        if path.lower().endswith('.exe'):
-            files_to_sign.append(path)
-    printf('Signing {} exe files'.format(len(files_to_sign)))
+    files_to_sign = [
+        path for path in walk(env.base) if path.lower().endswith('.exe')
+    ]
+
+    printf(f'Signing {len(files_to_sign)} exe files')
     sign_files(env, files_to_sign)
 
 

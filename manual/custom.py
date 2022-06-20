@@ -123,32 +123,51 @@ details and examples.
     ''')
 
     global_parser = get_parser('')
-    groups = []
-    for grp in global_parser.option_groups:
-        groups.append((titlecase(language, grp.title), grp.description, grp.option_list))
+    groups = [
+        (titlecase(language, grp.title), grp.description, grp.option_list)
+        for grp in global_parser.option_groups
+    ]
 
     global_options = '\n'.join(render_options('calibredb', groups, False, False))
 
     lines = []
     for cmd in COMMANDS:
         parser = option_parser_for(cmd)()
-        lines += ['.. _calibredb-%s-%s:' % (language, cmd), '']
+        lines += [f'.. _calibredb-{language}-{cmd}:', '']
         lines += [cmd, '~'*20, '']
         usage = parser.usage.strip()
-        usage = [i for i in usage.replace('%prog', 'calibredb').splitlines()]
-        cmdline = '    '+usage[0]
+        usage = list(usage.replace('%prog', 'calibredb').splitlines())
+        cmdline = f'    {usage[0]}'
         usage = usage[1:]
-        usage = [re.sub(r'(%s)([^a-zA-Z0-9])'%cmd, r':command:`\1`\2', i) for i in usage]
+        usage = [
+            re.sub(f'({cmd})([^a-zA-Z0-9])', r':command:`\1`\2', i)
+            for i in usage
+        ]
+
         lines += ['.. code-block:: none', '', cmdline, '']
         lines += usage
         groups = [(None, None, parser.option_list)]
         lines += ['']
-        lines += render_options('calibredb '+cmd, groups, False)
+        lines += render_options(f'calibredb {cmd}', groups, False)
         lines += ['']
         for group in parser.option_groups:
             if not getattr(group, 'is_global_options', False):
-                lines.extend(render_options(
-                    'calibredb_' + cmd, [[titlecase(language, group.title), group.description, group.option_list]], False, False, header_level='^'))
+                lines.extend(
+                    render_options(
+                        f'calibredb_{cmd}',
+                        [
+                            [
+                                titlecase(language, group.title),
+                                group.description,
+                                group.option_list,
+                            ]
+                        ],
+                        False,
+                        False,
+                        header_level='^',
+                    )
+                )
+
         lines += ['']
 
     raw = preamble + '\n\n'+'.. contents::\n  :local:'+ '\n\n' + global_options+'\n\n'+'\n'.join(lines)
@@ -165,26 +184,48 @@ def generate_ebook_convert_help(preamble, app):
     parser, plumber = create_option_parser(['ebook-convert',
         'dummyi.mobi', 'dummyo.epub', '-h'], default_log)
     groups = [(None, None, parser.option_list)]
-    for grp in parser.option_groups:
-        if grp.title not in {'INPUT OPTIONS', 'OUTPUT OPTIONS'}:
-            groups.append((titlecase(app, grp.title), grp.description, grp.option_list))
+    groups.extend(
+        (titlecase(app, grp.title), grp.description, grp.option_list)
+        for grp in parser.option_groups
+        if grp.title not in {'INPUT OPTIONS', 'OUTPUT OPTIONS'}
+    )
+
     options = '\n'.join(render_options('ebook-convert', groups, False))
 
     raw += '\n\n.. contents::\n  :local:'
 
     raw += '\n\n' + options
     for pl in sorted(input_format_plugins(), key=lambda x: x.name):
-        parser, plumber = create_option_parser(['ebook-convert',
-            'dummyi.'+sorted(pl.file_types)[0], 'dummyo.epub', '-h'], default_log)
-        groups = [(pl.name+ ' Options', '', g.option_list) for g in
-                parser.option_groups if g.title == "INPUT OPTIONS"]
+        parser, plumber = create_option_parser(
+            [
+                'ebook-convert',
+                f'dummyi.{sorted(pl.file_types)[0]}',
+                'dummyo.epub',
+                '-h',
+            ],
+            default_log,
+        )
+
+        groups = [
+            (f'{pl.name} Options', '', g.option_list)
+            for g in parser.option_groups
+            if g.title == "INPUT OPTIONS"
+        ]
+
         prog = 'ebook-convert-'+(pl.name.lower().replace(' ', '-'))
         raw += '\n\n' + '\n'.join(render_options(prog, groups, False, True))
     for pl in sorted(output_format_plugins(), key=lambda x: x.name):
-        parser, plumber = create_option_parser(['ebook-convert', 'd.epub',
-            'dummyi.'+pl.file_type, '-h'], default_log)
-        groups = [(pl.name+ ' Options', '', g.option_list) for g in
-                parser.option_groups if g.title == "OUTPUT OPTIONS"]
+        parser, plumber = create_option_parser(
+            ['ebook-convert', 'd.epub', f'dummyi.{pl.file_type}', '-h'],
+            default_log,
+        )
+
+        groups = [
+            (f'{pl.name} Options', '', g.option_list)
+            for g in parser.option_groups
+            if g.title == "OUTPUT OPTIONS"
+        ]
+
         prog = 'ebook-convert-'+(pl.name.lower().replace(' ', '-'))
         raw += '\n\n' + '\n'.join(render_options(prog, groups, False, True))
 
@@ -194,7 +235,7 @@ def generate_ebook_convert_help(preamble, app):
 def update_cli_doc(name, raw, language):
     if isinstance(raw, bytes):
         raw = raw.decode('utf-8')
-    path = 'generated/%s/%s.rst' % (language, name)
+    path = f'generated/{language}/{name}.rst'
     old_raw = open(path, encoding='utf-8').read() if os.path.exists(path) else ''
     if not os.path.exists(path) or old_raw != raw:
         import difflib
@@ -204,7 +245,7 @@ def update_cli_doc(name, raw, language):
                     path, path)
             for line in lines:
                 print(line)
-        info('creating '+os.path.splitext(os.path.basename(path))[0])
+        info(f'creating {os.path.splitext(os.path.basename(path))[0]}')
         p = os.path.dirname(path)
         if p and not os.path.exists(p):
             os.makedirs(p)
@@ -212,15 +253,12 @@ def update_cli_doc(name, raw, language):
 
 
 def render_options(cmd, groups, options_header=True, add_program=True, header_level='~'):
-    lines = ['']
-    if options_header:
-        lines = [_('[options]'), '-'*40, '']
+    lines = [_('[options]'), '-'*40, ''] if options_header else ['']
     if add_program:
-        lines += ['.. program:: '+cmd, '']
+        lines += [f'.. program:: {cmd}', '']
     for title, desc, options in groups:
         if title:
-            lines.extend([title, header_level * (len(title) + 4)])
-            lines.append('')
+            lines.extend([title, header_level * (len(title) + 4), ''])
         if desc:
             lines.extend([desc, ''])
         for opt in sorted(options, key=lambda x: x.get_opt_string()):
@@ -231,7 +269,7 @@ def render_options(cmd, groups, options_header=True, add_program=True, header_le
             help = mark_options(help)
             opt_strings = (x.strip() for x in tuple(opt._long_opts or ()) + tuple(opt._short_opts or ()))
             opt = '.. option:: ' + ', '.join(opt_strings)
-            lines.extend([opt, '', '    '+help, ''])
+            lines.extend([opt, '', f'    {help}', ''])
     return lines
 
 
@@ -242,9 +280,9 @@ def mark_options(raw):
         opt = m.group()
         a, b = opt.partition('=')[::2]
         if a in ('--option1', '--option2'):
-            return '``' + m.group() + '``'
-        a = ':option:`' + a + '`'
-        b = (' = ``' + b + '``') if b else ''
+            return f'``{m.group()}``'
+        a = f':option:`{a}`'
+        b = f' = ``{b}``' if b else ''
         return a + b
     raw = re.sub(r'(--[|()a-zA-Z0-9_=,-]+)', sub, raw)
     return raw
@@ -277,7 +315,7 @@ def cli_docs(language):
     undocumented_cmds.sort()
 
     documented = [' '*4 + c[0] for c in documented_cmds]
-    undocumented = ['  * ' + c for c in undocumented_cmds]
+    undocumented = [f'  * {c}' for c in undocumented_cmds]
 
     raw = (CLI_INDEX % cli_index_strings()[:5]).format(documented='\n'.join(documented),
             undocumented='\n'.join(undocumented))
@@ -289,17 +327,23 @@ def cli_docs(language):
         usage = [mark_options(i) for i in parser.usage.replace('%prog', cmd).splitlines()]
         cmdline = usage[0]
         usage = usage[1:]
-        usage = [i.replace(cmd, ':command:`%s`'%cmd) for i in usage]
+        usage = [i.replace(cmd, f':command:`{cmd}`') for i in usage]
         usage = '\n'.join(usage)
-        preamble = CLI_PREAMBLE.format(cmd=cmd, cmdref=cmd + '-' + language, cmdline=cmdline, usage=usage)
+        preamble = CLI_PREAMBLE.format(
+            cmd=cmd, cmdref=f'{cmd}-{language}', cmdline=cmdline, usage=usage
+        )
+
         if cmd == 'ebook-convert':
             generate_ebook_convert_help(preamble, language)
         elif cmd == 'calibredb':
             generate_calibredb_help(preamble, language)
         else:
             groups = [(None, None, parser.option_list)]
-            for grp in parser.option_groups:
-                groups.append((grp.title, grp.description, grp.option_list))
+            groups.extend(
+                (grp.title, grp.description, grp.option_list)
+                for grp in parser.option_groups
+            )
+
             raw = preamble
             lines = render_options(cmd, groups)
             raw += '\n'+'\n'.join(lines)
@@ -319,10 +363,10 @@ def template_docs(language):
 
 def localized_path(app, langcode, pagename):
     href = app.builder.get_target_uri(pagename)
-    href = re.sub(r'generated/[a-z]+/', 'generated/%s/' % langcode, href)
+    href = re.sub(r'generated/[a-z]+/', f'generated/{langcode}/', href)
     prefix = '/'
     if langcode != 'en':
-        prefix += langcode + '/'
+        prefix += f'{langcode}/'
     return prefix + href
 
 
@@ -342,7 +386,7 @@ def setup_man_pages(app):
     documented_cmds = get_cli_docs()[0]
     man_pages = []
     for cmd, option_parser in documented_cmds:
-        path = 'generated/%s/%s' % (app.config.language, cmd)
+        path = f'generated/{app.config.language}/{cmd}'
         man_pages.append((
             path, cmd, cmd, 'Kovid Goyal', 1
         ))

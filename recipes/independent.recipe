@@ -59,8 +59,7 @@ class TheIndependentNew(BasicNewsRecipe):
             except TypeError:
                 self.non_ie_ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.111 Safari/537.36'
         kw['user_agent'] = self.non_ie_ua
-        br = BasicNewsRecipe.get_browser(self, *a, **kw)
-        return br
+        return BasicNewsRecipe.get_browser(self, *a, **kw)
 
     def preprocess_html(self, soup):
         for img in soup.findAll('amp-img'):

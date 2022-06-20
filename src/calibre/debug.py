@@ -17,9 +17,7 @@ from polyglot.builtins import exec_path, raw_input, unicode_type, getcwd
 
 def run_calibre_debug(*args, **kw):
     import subprocess
-    creationflags = 0
-    if iswindows:
-        creationflags = subprocess.CREATE_NO_WINDOW
+    creationflags = subprocess.CREATE_NO_WINDOW if iswindows else 0
     cmd = get_debug_executable() + list(args)
     kw['creationflags'] = creationflags
     return subprocess.Popen(cmd, **kw)
@@ -275,9 +273,9 @@ def main(args=sys.argv):
     elif opts.add_simple_plugin is not None:
         add_simple_plugin(opts.add_simple_plugin)
     elif opts.paths:
-        prints('CALIBRE_RESOURCES_PATH='+sys.resources_location)
-        prints('CALIBRE_EXTENSIONS_PATH='+sys.extensions_location)
-        prints('CALIBRE_PYTHON_PATH='+os.pathsep.join(sys.path))
+        prints(f'CALIBRE_RESOURCES_PATH={sys.resources_location}')
+        prints(f'CALIBRE_EXTENSIONS_PATH={sys.extensions_location}')
+        prints(f'CALIBRE_PYTHON_PATH={os.pathsep.join(sys.path)}')
     elif opts.reinitialize_db is not None:
         reinit_db(opts.reinitialize_db)
     elif opts.inspect_mobi:
@@ -343,7 +341,7 @@ def main(args=sys.argv):
             elif ext in {'mobi', 'azw', 'azw3'}:
                 inspect_mobi(path)
             else:
-                print('Cannot dump unknown filetype: %s' % path)
+                print(f'Cannot dump unknown filetype: {path}')
     elif len(args) >= 2 and os.path.exists(os.path.join(args[1], '__main__.py')):
         sys.path.insert(0, args[1])
         run_script(os.path.join(args[1], '__main__.py'), args[2:])
