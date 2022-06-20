@@ -118,7 +118,7 @@ class Handelsblatt(BasicNewsRecipe):
 
     def print_version(self, url):
         main, sep, id = url.rpartition('/')
-        return main + '/v_detail_tab_print/' + id
+        return f'{main}/v_detail_tab_print/{id}'
 
     def preprocess_html(self, soup):
         # remove all articles without relevant content (e.g., videos)
@@ -152,8 +152,7 @@ class Handelsblatt(BasicNewsRecipe):
         # remove references to related articles
         for strong in soup.findAll('strong'):
             if strong.string and re.match('^Mehr:? ?', strong.string):
-                p_parent = strong.find_parent('p')
-                if p_parent:
+                if p_parent := strong.find_parent('p'):
                     p_parent.decompose()
                     break
         # clean up remainders of embedded content

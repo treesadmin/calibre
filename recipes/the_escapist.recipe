@@ -44,14 +44,13 @@ class al(BasicNewsRecipe):
         #
         baseURL = 'http://www.escapistmagazine.com'
         segments = url.split('/')
-        subPath = '/' + segments[3] + '/'
+        subPath = f'/{segments[3]}/'
 
         # The article number is the "number" that starts the name
         articleNumber = segments[len(segments) - 1]   # the "article name"
         articleNumber = articleNumber.split('-')[0]  # keep part before hyphen
 
-        fullUrl = baseURL + subPath + 'print/' + articleNumber
-        return fullUrl
+        return baseURL + subPath + 'print/' + articleNumber
 
     keep_only_tags = [
         dict(name='div', attrs={'id': 'article'})

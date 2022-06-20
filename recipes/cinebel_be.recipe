@@ -42,5 +42,4 @@ class Cinebel(BasicNewsRecipe):
         return soup
 
     def get_cover_url(self):
-        cover_url = 'http://www.cinebel.be/portal/resources/common/logo_index.gif'
-        return cover_url
+        return 'http://www.cinebel.be/portal/resources/common/logo_index.gif'

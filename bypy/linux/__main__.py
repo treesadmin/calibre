@@ -35,27 +35,42 @@ qt_get_dll_path = partial(get_dll_path, loc=os.path.join(QT_PREFIX, 'lib'))
 
 
 def binary_includes():
-    return [
-        j(PREFIX, 'bin', x) for x in ('pdftohtml', 'pdfinfo', 'pdftoppm', 'optipng', 'JxrDecApp')] + [
-
-        j(PREFIX, 'private', 'mozjpeg', 'bin', x) for x in ('jpegtran', 'cjpeg')] + [
-        ] + list(map(
-            get_dll_path,
-            ('usb-1.0 mtp expat sqlite3 ffi z lzma openjp2 poppler dbus-1 iconv xml2 xslt jpeg png16'
-             ' webp webpmux webpdemux exslt ncursesw readline chm hunspell-1.7 hyphen'
-             ' icudata icui18n icuuc icuio gcrypt gpg-error'
-             ' gobject-2.0 glib-2.0 gthread-2.0 gmodule-2.0 gio-2.0 dbus-glib-1').split()
-        )) + [
-            get_dll_path('podofo', 3), get_dll_path('bz2', 2), j(PREFIX, 'lib', 'libunrar.so'),
-            get_dll_path('ssl', 2), get_dll_path('crypto', 2), get_dll_path('python' + py_ver, 2),
-            # We dont include libstdc++.so as the OpenGL dlls on the target
-            # computer fail to load in the QPA xcb plugin if they were compiled
-            # with a newer version of gcc than the one on the build computer.
-            # libstdc++, like glibc is forward compatible and I dont think any
-            # distros do not have libstdc++.so.6, so it should be safe to leave it out.
-            # https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html (The current
-            # debian stable libstdc++ is  libstdc++.so.6.0.17)
-    ] + list(map(qt_get_dll_path, QT_DLLS))
+    return (
+        [
+            j(PREFIX, 'bin', x)
+            for x in (
+                'pdftohtml',
+                'pdfinfo',
+                'pdftoppm',
+                'optipng',
+                'JxrDecApp',
+            )
+        ]
+        + [
+            j(PREFIX, 'private', 'mozjpeg', 'bin', x)
+            for x in ('jpegtran', 'cjpeg')
+        ]
+        + []
+        + list(
+            map(
+                get_dll_path,
+                (
+                    'usb-1.0 mtp expat sqlite3 ffi z lzma openjp2 poppler dbus-1 iconv xml2 xslt jpeg png16'
+                    ' webp webpmux webpdemux exslt ncursesw readline chm hunspell-1.7 hyphen'
+                    ' icudata icui18n icuuc icuio gcrypt gpg-error'
+                    ' gobject-2.0 glib-2.0 gthread-2.0 gmodule-2.0 gio-2.0 dbus-glib-1'
+                ).split(),
+            )
+        )
+        + [
+            get_dll_path('podofo', 3),
+            get_dll_path('bz2', 2),
+            j(PREFIX, 'lib', 'libunrar.so'),
+            get_dll_path('ssl', 2),
+            get_dll_path('crypto', 2),
+            get_dll_path(f'python{py_ver}', 2),
+        ]
+    ) + list(map(qt_get_dll_path, QT_DLLS))
 
 
 class Env(object):
@@ -64,7 +79,7 @@ class Env(object):
         self.src_root = CALIBRE_DIR
         self.base = mkdtemp('frozen-')
         self.lib_dir = j(self.base, 'lib')
-        self.py_dir = j(self.lib_dir, 'python' + py_ver)
+        self.py_dir = j(self.lib_dir, f'python{py_ver}')
         os.makedirs(self.py_dir)
         self.bin_dir = j(self.base, 'bin')
         os.mkdir(self.bin_dir)
@@ -79,12 +94,13 @@ def ignore_in_lib(base, items, ignored_dirs=None):
     for name in items:
         path = j(base, name)
         if os.path.isdir(path):
-            if name in ignored_dirs or not os.path.exists(j(path, '__init__.py')):
-                if name != 'plugins':
-                    ans.append(name)
-        else:
-            if name.rpartition('.')[-1] not in ('so', 'py'):
+            if (
+                name in ignored_dirs
+                or not os.path.exists(j(path, '__init__.py'))
+            ) and name != 'plugins':
                 ans.append(name)
+        elif name.rpartition('.')[-1] not in ('so', 'py'):
+            ans.append(name)
     return ans
 
 
@@ -128,7 +144,7 @@ def copy_libs(env):
 
 def copy_python(env, ext_dir):
     print('Copying python...')
-    srcdir = j(PREFIX, 'lib/python' + py_ver)
+    srcdir = j(PREFIX, f'lib/python{py_ver}')
 
     for x in os.listdir(srcdir):
         y = j(srcdir, x)
@@ -177,17 +193,29 @@ def copy_python(env, ext_dir):
 def build_launchers(env):
     base = self_dir
     sources = [j(base, x) for x in ['util.c']]
-    objects = [j(env.obj_dir, os.path.basename(x) + '.o') for x in sources]
+    objects = [j(env.obj_dir, f'{os.path.basename(x)}.o') for x in sources]
     cflags = '-fno-strict-aliasing -W -Wall -c -O2 -pipe -DPY_VERSION_MAJOR={} -DPY_VERSION_MINOR={}'.format(*py_ver.split('.'))
-    cflags = cflags.split() + ['-I%s/include/python%s' % (PREFIX, py_ver)]
+    cflags = cflags.split() + [f'-I{PREFIX}/include/python{py_ver}']
     cflags += [f'-I{path_to_freeze_dir()}', f'-I{env.obj_dir}']
     for src, obj in zip(sources, objects):
         cmd = ['gcc'] + cflags + ['-fPIC', '-o', obj, src]
         run(*cmd)
 
     dll = j(env.lib_dir, 'libcalibre-launcher.so')
-    cmd = ['gcc', '-O2', '-Wl,--rpath=$ORIGIN/../lib', '-fPIC', '-o', dll, '-shared'] + objects + \
-        ['-L%s/lib' % PREFIX, '-lpython' + py_ver]
+    cmd = (
+        [
+            'gcc',
+            '-O2',
+            '-Wl,--rpath=$ORIGIN/../lib',
+            '-fPIC',
+            '-o',
+            dll,
+            '-shared',
+        ]
+        + objects
+        + [f'-L{PREFIX}/lib', f'-lpython{py_ver}']
+    )
+
     run(*cmd)
 
     src = j(base, 'main.c')
@@ -211,15 +239,19 @@ def build_launchers(env):
                        '-DFUNCTION=L"%s"' % func]
 
             exe = j(env.bin_dir, bname)
-            cmd = ['gcc'] + xflags + [src, '-o', exe, '-L' + env.lib_dir, '-lcalibre-launcher']
+            cmd = (
+                ['gcc']
+                + xflags
+                + [src, '-o', exe, f'-L{env.lib_dir}', '-lcalibre-launcher']
+            )
+
             jobs.append(create_job(cmd))
             sh = j(env.base, bname)
             shutil.copy2(c_launcher, sh)
             os.chmod(sh,
                      stat.S_IREAD | stat.S_IEXEC | stat.S_IWRITE | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
-    if jobs:
-        if not parallel_build(jobs, verbose=False):
-            raise SystemExit(1)
+    if jobs and not parallel_build(jobs, verbose=False):
+        raise SystemExit(1)
 
 
 def is_elf(path):
@@ -272,7 +304,11 @@ def create_tarfile(env, compression_level='9'):
         if err.errno != errno.ENOENT:
             raise
     os.mkdir(base)
-    dist = os.path.join(base, '%s-%s-%s.tar' % (calibre_constants['appname'], calibre_constants['version'], arch))
+    dist = os.path.join(
+        base,
+        f"{calibre_constants['appname']}-{calibre_constants['version']}-{arch}.tar",
+    )
+
     with tarfile.open(dist, mode='w', format=tarfile.PAX_FORMAT) as tf:
         cwd = os.getcwd()
         os.chdir(env.base)
@@ -284,10 +320,13 @@ def create_tarfile(env, compression_level='9'):
     print('Compressing archive...')
     ans = dist.rpartition('.')[0] + '.txz'
     start_time = time.time()
-    subprocess.check_call(['xz', '--threads=0', '-f', '-' + compression_level, dist])
+    subprocess.check_call(
+        ['xz', '--threads=0', '-f', f'-{compression_level}', dist]
+    )
+
     secs = time.time() - start_time
     print('Compressed in %d minutes %d seconds' % (secs // 60, secs % 60))
-    os.rename(dist + '.xz', ans)
+    os.rename(f'{dist}.xz', ans)
     print('Archive %s created: %.2f MB' % (
         os.path.basename(ans), os.stat(ans).st_size / (1024.**2)))
 

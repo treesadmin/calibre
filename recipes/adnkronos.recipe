@@ -30,8 +30,7 @@ class Adnkronos(BasicNewsRecipe):
     remove_javascript = True
 
     def get_article_url(self, article):
-        link = article.get('id', article.get('guid', None))
-        return link
+        return article.get('id', article.get('guid', None))
 
     extra_css = ' .newsAbstract{font-style: italic} '
     keep_only_tags = [dict(name='div', attrs={'class': ['breadCrumbs', 'newsTop', 'newsText']})

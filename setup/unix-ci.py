@@ -40,7 +40,7 @@ if ismacos:
         old = os.environ.get('DYLD_FALLBACK_LIBRARY_PATH', '')
         if old:
             old += ':'
-        setenv('DYLD_FALLBACK_LIBRARY_PATH', old + '$SW/lib')
+        setenv('DYLD_FALLBACK_LIBRARY_PATH', f'{old}$SW/lib')
 else:
 
     SWBASE = '/sw'
@@ -67,13 +67,13 @@ def run(*args):
 
 
 def decompress(path, dest, compression):
-    run('tar', 'x' + compression + 'f', path, '-C', dest)
+    run('tar', f'x{compression}f', path, '-C', dest)
 
 
 def download_and_decompress(url, dest, compression=None):
     if compression is None:
         compression = 'j' if url.endswith('.bz2') else 'J'
-    for i in range(5):
+    for _ in range(5):
         print('Downloading', url, '...')
         with NamedTemporaryFile() as f:
             ret = subprocess.Popen(['curl', '-fSL', url], stdout=f).wait()
@@ -82,14 +82,14 @@ def download_and_decompress(url, dest, compression=None):
                 sys.stdout.flush(), sys.stderr.flush()
                 return
             time.sleep(1)
-    raise SystemExit('Failed to download ' + url)
+    raise SystemExit(f'Failed to download {url}')
 
 
 def install_qt_source_code():
     dest = os.path.expanduser('~/qt-base')
     os.mkdir(dest)
     download_and_decompress('https://download.calibre-ebook.com/qtbase-everywhere-src-5.15.2.tar.xz', dest, 'J')
-    qdir = glob.glob(dest + '/*')[0]
+    qdir = glob.glob(f'{dest}/*')[0]
     os.environ['QT_SRC'] = qdir
 
 
@@ -119,8 +119,10 @@ def main():
 
         tball = 'macos-64' if ismacos else 'linux-64'
         download_and_decompress(
-            'https://download.calibre-ebook.com/ci/calibre3/{}.tar.xz'.format(tball), SW
+            f'https://download.calibre-ebook.com/ci/calibre3/{tball}.tar.xz',
+            SW,
         )
+
         if not ismacos:
             install_linux_deps()
 
@@ -152,7 +154,7 @@ username = api
         run_python('setup.py test')
         run_python('setup.py test_rs')
     else:
-        raise SystemExit('Unknown action: {}'.format(action))
+        raise SystemExit(f'Unknown action: {action}')
 
 
 if __name__ == '__main__':

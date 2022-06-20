@@ -57,7 +57,7 @@ MR_URL = 'https://www.mobileread.com/forums/'
 IS_PRODUCTION = os.path.exists('/srv/plugins')
 WORKDIR = '/srv/plugins' if IS_PRODUCTION else '/t/plugins'
 PLUGINS = 'plugins.json.bz2'
-INDEX = MR_URL + 'showpost.php?p=1362767&postcount=1'
+INDEX = f'{MR_URL}showpost.php?p=1362767&postcount=1'
 # INDEX = 'file:///t/raw.html'
 
 IndexEntry = namedtuple('IndexEntry', 'name url donate history uninstall deprecated thread_id')
@@ -119,7 +119,7 @@ def parse_index(raw=None):  # {{{
         name, url, rest = u(match.group(2)), u(match.group(1)), match.group(3)
         m = dpat.search(rest)
         if m is not None:
-            donate = u(m.group(1))
+            donate = u(m[1])
         for m in key_pat.finditer(rest):
             k = m.group(1).lower()
             if k == 'history' and m.group(2).strip().lower() in {'yes', 'true'}:
@@ -129,10 +129,12 @@ def parse_index(raw=None):  # {{{
 
         thread_id = url_to_plugin_id(url, deprecated)
         if thread_id in seen:
-            raise ValueError('thread_id for %s and %s is the same: %s' % (seen[thread_id], name, thread_id))
+            raise ValueError(
+                f'thread_id for {seen[thread_id]} and {name} is the same: {thread_id}'
+            )
+
         seen[thread_id] = name
-        entry = IndexEntry(name, url, donate, history, uninstall, deprecated, thread_id)
-        yield entry
+        yield IndexEntry(name, url, donate, history, uninstall, deprecated, thread_id)
 # }}}
 
 
@@ -174,13 +176,13 @@ def convert_node(fields, x, names={}, import_data=None):
         return dict(zip(keys, values))
     elif name == 'Call':
         if len(x.args) != 1 and len(x.keywords) != 0:
-            raise TypeError('Unsupported function call for fields: %s' % (fields,))
+            raise TypeError(f'Unsupported function call for fields: {fields}')
         return tuple(map(conv, x.args))[0]
     elif name == 'Name':
         if x.id not in names:
             if import_data is not None and x.id in import_data[0]:
                 return get_import_data(x.id, import_data[0][x.id], *import_data[1:])
-            raise ValueError('Could not find name %s for fields: %s' % (x.id, fields))
+            raise ValueError(f'Could not find name {x.id} for fields: {fields}')
         return names[x.id]
     elif name == 'BinOp':
         if x.right.__class__.__name__ == 'Str':
@@ -189,7 +191,7 @@ def convert_node(fields, x, names={}, import_data=None):
             return x.right.value
     elif name == 'Attribute':
         return conv(getattr(conv(x.value), x.attr))
-    raise TypeError('Unknown datatype %s for fields: %s' % (x, fields))
+    raise TypeError(f'Unknown datatype {x} for fields: {fields}')
 
 
 Alias = namedtuple('Alias', 'name asname')
@@ -207,24 +209,23 @@ def get_import_data(name, mod, zf, names):
     if is_module_import:
         mod = [name]
     mod = '/'.join(mod) + '.py'
-    if mod in names:
-        raw = zf.open(names[mod]).read()
-        module = ast.parse(raw, filename='__init__.py')
-        top_level_assigments = [x for x in ast.iter_child_nodes(module) if x.__class__.__name__ == 'Assign']
-        module = Module()
-        for node in top_level_assigments:
-            targets = {getattr(t, 'id', None) for t in node.targets}
-            targets.discard(None)
-            for x in targets:
-                if is_module_import:
-                    setattr(module, x, node.value)
-                elif x == name:
-                    return convert_node({x}, node.value)
-        if is_module_import:
-            return module
-        raise ValueError('Failed to find name: %r in module: %r' % (name, mod))
-    else:
+    if mod not in names:
         raise ValueError('Failed to find module: %r' % mod)
+    raw = zf.open(names[mod]).read()
+    module = ast.parse(raw, filename='__init__.py')
+    top_level_assigments = [x for x in ast.iter_child_nodes(module) if x.__class__.__name__ == 'Assign']
+    module = Module()
+    for node in top_level_assigments:
+        targets = {getattr(t, 'id', None) for t in node.targets}
+        targets.discard(None)
+        for x in targets:
+            if is_module_import:
+                setattr(module, x, node.value)
+            elif x == name:
+                return convert_node({x}, node.value)
+    if is_module_import:
+        return module
+    raise ValueError('Failed to find name: %r in module: %r' % (name, mod))
 
 
 def parse_metadata(raw, namelist, zf):
@@ -283,8 +284,7 @@ def parse_metadata(raw, namelist, zf):
         for node in class_assigments:
             targets = {getattr(t, 'id', None) for t in node.targets}
             targets.discard(None)
-            fields = field_names.intersection(targets)
-            if fields:
+            if fields := field_names.intersection(targets):
                 val = convert_node(fields, node.value, names=names, import_data=import_data)
                 for field in fields:
                     found[field] = val
@@ -357,8 +357,8 @@ def fetch_plugin(old_index, entry):
     raw = read(entry.url).decode('utf-8', 'replace')
     url, name = parse_plugin_zip_url(raw)
     if url is None:
-        raise ValueError('Failed to find zip file URL for entry: %s' % repr(entry))
-    plugin = lm_map.get(entry.thread_id, None)
+        raise ValueError(f'Failed to find zip file URL for entry: {repr(entry)}')
+    plugin = lm_map.get(entry.thread_id)
 
     if plugin is not None:
         # Previously downloaded plugin
@@ -377,7 +377,7 @@ def fetch_plugin(old_index, entry):
     slm = datetime(*parsedate(info.get('Last-Modified'))[:6])
     plugin = get_plugin_info(raw)
     plugin['last_modified'] = slm.isoformat()
-    plugin['file'] = 'staging_%s.zip' % entry.thread_id
+    plugin['file'] = f'staging_{entry.thread_id}.zip'
     plugin['size'] = len(raw)
     plugin['original_url'] = url
     update_plugin_from_entry(plugin, entry)
@@ -445,28 +445,29 @@ def plugin_to_index(plugin, count):
         quoteattr(plugin['thread_url']), escape(plugin['name']))
     released = datetime(*tuple(map(int, re.split(r'\D', plugin['last_modified'])))[:6]).strftime('%e %b, %Y').lstrip()
     details = [
-        'Version: <b>%s</b>' % escape('.'.join(map(str, plugin['version']))),
-        'Released: <b>%s</b>' % escape(released),
-        'Author: %s' % escape(plugin['author']),
-        'calibre: %s' % escape('.'.join(map(str, plugin['minimum_calibre_version']))),
-        'Platforms: %s' % escape(', '.join(sorted(plugin['supported_platforms']) or ['all'])),
+        f"Version: <b>{escape('.'.join(map(str, plugin['version'])))}</b>",
+        f'Released: <b>{escape(released)}</b>',
+        f"Author: {escape(plugin['author'])}",
+        f"calibre: {escape('.'.join(map(str, plugin['minimum_calibre_version'])))}",
+        f"Platforms: {escape(', '.join(sorted(plugin['supported_platforms']) or ['all']))}",
     ]
+
     if plugin['uninstall']:
-        details.append('Uninstall: %s' % escape(', '.join(plugin['uninstall'])))
+        details.append(f"Uninstall: {escape(', '.join(plugin['uninstall']))}")
     if plugin['donate']:
         details.append('<a href=%s title="Donate">Donate</a>' % quoteattr(plugin['donate']))
     block = []
     for li in details:
         if li.startswith('calibre:'):
             block.append('<br>')
-        block.append('<li>%s</li>' % li)
+        block.append(f'<li>{li}</li>')
     block = '<ul>%s</ul>' % ('\n'.join(block))
     downloads = ('\xa0<span class="download-count">[%d total downloads]</span>' % count) if count else ''
     zipfile = '<div class="end"><a href=%s title="Download plugin" download=%s>Download plugin \u2193</a>%s</div>' % (
         quoteattr(plugin['file']), quoteattr(plugin['name'] + '.zip'), downloads)
     desc = plugin['description'] or ''
     if desc:
-        desc = '<p>%s</p>' % desc
+        desc = f'<p>{desc}</p>'
     return '%s\n%s\n%s\n%s\n\n' % (title, desc, block, zipfile)
 
 
@@ -579,7 +580,7 @@ def update_stats():
                 raise
         if os.geteuid() != 0:
             return stats
-        log = 'rotated-' + log
+        log = f'rotated-{log}'
         os.rename(olog, log)
         subprocess.check_call(['/usr/sbin/nginx', '-s', 'reopen'])
         atexit.register(os.remove, log)
@@ -587,7 +588,7 @@ def update_stats():
     for line in open(log, 'rb'):
         m = pat.search(line)
         if m is not None:
-            plugin = m.group(1).decode('utf-8')
+            plugin = m[1].decode('utf-8')
             stats[plugin] = stats.get(plugin, 0) + 1
     data = json.dumps(stats, indent=2)
     if not isinstance(data, bytes):
@@ -601,14 +602,13 @@ def main():
     try:
         os.chdir(WORKDIR)
     except OSError as err:
-        if err.errno == errno.ENOENT:
-            try:
-                os.makedirs(WORKDIR)
-            except EnvironmentError:
-                pass
-            os.chdir(WORKDIR)
-        else:
+        if err.errno != errno.ENOENT:
             raise
+        try:
+            os.makedirs(WORKDIR)
+        except EnvironmentError:
+            pass
+        os.chdir(WORKDIR)
     if os.geteuid() == 0 and not singleinstance():
         print('Another instance of plugins-mirror is running', file=sys.stderr)
         raise SystemExit(1)
@@ -661,7 +661,7 @@ def test_parse():  # {{{
     new_entries = tuple(parse_index(raw))
     for i, entry in enumerate(old_entries):
         if entry != new_entries[i]:
-            print('The new entry: %s != %s' % (new_entries[i], entry))
+            print(f'The new entry: {new_entries[i]} != {entry}')
             raise SystemExit(1)
     pool = ThreadPool(processes=20)
     urls = [e.url for e in new_entries]
@@ -678,7 +678,7 @@ def test_parse():  # {{{
                 break
         new_url, aname = parse_plugin_zip_url(raw)
         if new_url != full_url:
-            print('new url (%s): %s != %s for plugin at: %s' % (aname, new_url, full_url, url))
+            print(f'new url ({aname}): {new_url} != {full_url} for plugin at: {url}')
             raise SystemExit(1)
 
 # }}}

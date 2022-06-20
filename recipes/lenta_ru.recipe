@@ -128,8 +128,7 @@ class LentaRURecipe(BasicNewsRecipe):
         # Remove all elements that were not extracted before
         for tag, attrs in extractElements.items():
             for attr in attrs:
-                garbage = soup.findAll(tag, attr)
-                if garbage:
+                if garbage := soup.findAll(tag, attr):
                     for pieceOfGarbage in garbage:
                         pieceOfGarbage.extract()
 
@@ -144,14 +143,18 @@ class LentaRURecipe(BasicNewsRecipe):
             contents.insert(len(contents.contents), element)
             element = nextElement
 
-        # Place article date after header
-        dates = soup.findAll(text=re.compile(
-            r'\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}:\d{2}'))
-        if dates:
+        if dates := soup.findAll(
+            text=re.compile(r'\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}:\d{2}')
+        ):
             for date in dates:
                 for string in date:
                     parent = date.parent
-                    if (parent and isinstance(parent, Tag) and 'div' == parent.name and 'dt' == ''.join(parent['class'])):
+                    if (
+                        parent
+                        and isinstance(parent, Tag)
+                        and parent.name == 'div'
+                        and ''.join(parent['class']) == 'dt'
+                    ):
                         # Date div found
                         parent.extract()
                         parent[
@@ -159,23 +162,19 @@ class LentaRURecipe(BasicNewsRecipe):
                         contents.insert(1, parent)
                         break
 
-        # Place article picture after date
-        pic = soup.find('img')
-        if pic:
+        if pic := soup.find('img'):
             picDiv = new_tag(soup, 'div')
             picDiv['style'] = 'width: 100%; text-align: center;'
             pic.extract()
             picDiv.insert(0, pic)
-            title = pic.get('title', None)
-            if title:
+            if title := pic.get('title', None):
                 titleDiv = new_tag(soup, 'div')
                 titleDiv['style'] = 'font-size: 0.5em;'
                 titleDiv.insert(0, title)
                 picDiv.insert(1, titleDiv)
             contents.insert(2, picDiv)
 
-        body = soup.find('td', {'class': ['statya', 'content']})
-        if body:
+        if body := soup.find('td', {'class': ['statya', 'content']}):
             body.replaceWith(contents)
 
         return soup

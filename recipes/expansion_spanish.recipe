@@ -107,8 +107,10 @@ class expansion_spanish(BasicNewsRecipe):
         year = str(st.tm_year)
         month = "%.2d" % st.tm_mon
         day = "%.2d" % st.tm_mday
-        cover = 'http://img5.kiosko.net/' + year + '/' + \
-            month + '/' + day + '/es/expansion.750.jpg'
+        cover = (
+            ((f'http://img5.kiosko.net/{year}/' + month) + '/') + day
+        ) + '/es/expansion.750.jpg'
+
         br = BasicNewsRecipe.get_browser(self)
         try:
             br.open(cover)
@@ -124,7 +126,7 @@ class expansion_spanish(BasicNewsRecipe):
     def print_version(self, url):
         st = time.time()
         segundos = str(int(st))
-        parametros = '.html?t=' + segundos
+        parametros = f'.html?t={segundos}'
         return url.replace('.html', parametros)
 
     _processed_links = []
@@ -141,13 +143,13 @@ class expansion_spanish(BasicNewsRecipe):
             link = link.split('/')[-2]
             a = ['0B', '0C', '0D', '0E', '0F', '0G', '0N', '0L0S', '0A']
             b = ['.', '/', '?', '-', '=', '&', '.com', 'www.', '0']
-            for i in range(0, len(a)):
+            for i in range(len(a)):
                 link = link.replace(a[i], b[i])
-            link = "http://" + link
+            link = f"http://{link}"
 
         # Eliminar artículos duplicados en otros feeds
 
-        if not (link in self._processed_links):
+        if link not in self._processed_links:
             self._processed_links.append(link)
         else:
             link = None

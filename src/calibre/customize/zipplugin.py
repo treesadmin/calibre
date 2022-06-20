@@ -83,8 +83,7 @@ def get_icons(zfp, name_or_list_of_names):
     ians = {}
     for name in names:
         p = QPixmap()
-        raw = ans.get(name, None)
-        if raw:
+        if raw := ans.get(name, None):
             p.loadFromData(raw)
         ians[name] = QIcon(p)
     if len(names) == 1:
@@ -108,7 +107,7 @@ def load_translations(namespace, zfp):
             return
         with zipfile.ZipFile(zfp) as zf:
             try:
-                mo = zf.read('translations/%s.mo' % lang)
+                mo = zf.read(f'translations/{lang}.mo')
             except KeyError:
                 mo = None  # No translations for this language present
         if mo is None:
@@ -258,7 +257,7 @@ class CalibrePluginFinder:
             if not fullname_in_plugin:
                 fullname_in_plugin = '__init__'
             if fullname_in_plugin not in names:
-                if fullname_in_plugin + '.__init__' in names:
+                if f'{fullname_in_plugin}.__init__' in names:
                     fullname_in_plugin += '.__init__'
                 else:
                     return
@@ -285,20 +284,25 @@ class CalibrePluginFinder:
 
         try:
             ans = None
-            plugin_module = 'calibre_plugins.%s'%plugin_name
+            plugin_module = f'calibre_plugins.{plugin_name}'
             m = sys.modules.get(plugin_module, None)
             if m is not None:
                 reload(m)
             else:
                 m = importlib.import_module(plugin_module)
-            plugin_classes = []
-            for obj in itervalues(m.__dict__):
-                if isinstance(obj, type) and issubclass(obj, Plugin) and \
-                        obj.name != 'Trivial Plugin':
-                    plugin_classes.append(obj)
+            plugin_classes = [
+                obj
+                for obj in itervalues(m.__dict__)
+                if isinstance(obj, type)
+                and issubclass(obj, Plugin)
+                and obj.name != 'Trivial Plugin'
+            ]
+
             if not plugin_classes:
-                raise InvalidPlugin('No plugin class found in %s:%s'%(
-                    as_unicode(path_to_zip_file), plugin_name))
+                raise InvalidPlugin(
+                    f'No plugin class found in {as_unicode(path_to_zip_file)}:{plugin_name}'
+                )
+
             if len(plugin_classes) > 1:
                 plugin_classes.sort(key=lambda c:(getattr(c, '__module__', None) or '').count('.'))
 
@@ -312,8 +316,9 @@ class CalibrePluginFinder:
 
             if platform not in ans.supported_platforms:
                 raise InvalidPlugin(
-                    'The plugin at %s cannot be used on %s' %
-                    (as_unicode(path_to_zip_file), platform))
+                    f'The plugin at {as_unicode(path_to_zip_file)} cannot be used on {platform}'
+                )
+
 
             return ans
         except:
@@ -338,11 +343,10 @@ class CalibrePluginFinder:
                 plugin_name = 'dummy%d'%c
                 if plugin_name not in self.loaded_plugins:
                     break
-        else:
-            if self._identifier_pat.match(plugin_name) is None:
-                raise InvalidPlugin((
-                    'The plugin at %r uses an invalid import name: %r' %
-                    (path_to_zip_file, plugin_name)))
+        elif self._identifier_pat.match(plugin_name) is None:
+            raise InvalidPlugin((
+                'The plugin at %r uses an invalid import name: %r' %
+                (path_to_zip_file, plugin_name)))
 
         pynames = [x for x in names if x.endswith('.py')]
 

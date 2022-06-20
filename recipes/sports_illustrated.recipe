@@ -9,7 +9,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 def absolutize(href):
     if href.startswith('/'):
-        href = 'https://www.si.com' + href
+        href = f'https://www.si.com{href}'
     return href
 
 
@@ -65,7 +65,4 @@ class SI(BasicNewsRecipe):
             arts = cats.setdefault(category, [])
             arts.append({'title': title, 'url': url})
             self.log('Found article', title)
-        ans = []
-        for key in sorted(cats, key=lambda x: x.lower()):
-            ans.append((key, cats[key]))
-        return ans
+        return [(key, cats[key]) for key in sorted(cats, key=lambda x: x.lower())]

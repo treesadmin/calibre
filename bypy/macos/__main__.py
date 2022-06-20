@@ -56,16 +56,45 @@ def compile_launcher_lib(contents_dir, gcc, base, pyver, inc_dir):
 
     dest = join(contents_dir, 'Frameworks', 'calibre-launcher.dylib')
     src = join(base, 'util.c')
-    cmd = [gcc] + '-Wall -dynamiclib -std=gnu99'.split() + [src] + \
-        ['-I' + base] + '-DPY_VERSION_MAJOR={} -DPY_VERSION_MINOR={}'.format(*pyver.split('.')).split() + \
-        [f'-I{path_to_freeze_dir()}', f'-I{inc_dir}'] + \
-        [f'-DENV_VARS={env}', f'-DENV_VAR_VALS={env_vals}'] + \
-        ['-I%s/python/Python.framework/Versions/Current/Headers' % PREFIX] + \
-        '-current_version 1.0 -compatibility_version 1.0'.split() + \
-        '-fvisibility=hidden -o'.split() + [dest] + \
-        ['-install_name',
-         '@executable_path/../Frameworks/' + os.path.basename(dest)] + \
-        [('-F%s/python' % PREFIX), '-framework', 'Python', '-framework', 'CoreFoundation', '-headerpad_max_install_names']
+    cmd = (
+        (
+            (
+                (
+                    (
+                        (
+                            [gcc]
+                            + '-Wall -dynamiclib -std=gnu99'.split()
+                            + [src]
+                            + [f'-I{base}']
+                        )
+                        + '-DPY_VERSION_MAJOR={} -DPY_VERSION_MINOR={}'.format(
+                            *pyver.split('.')
+                        ).split()
+                        + [f'-I{path_to_freeze_dir()}', f'-I{inc_dir}']
+                    )
+                    + [f'-DENV_VARS={env}', f'-DENV_VAR_VALS={env_vals}']
+                )
+                + [
+                    f'-I{PREFIX}/python/Python.framework/Versions/Current/Headers'
+                ]
+            )
+            + '-current_version 1.0 -compatibility_version 1.0'.split()
+            + '-fvisibility=hidden -o'.split()
+            + [dest]
+        )
+        + [
+            '-install_name',
+            f'@executable_path/../Frameworks/{os.path.basename(dest)}',
+        ]
+    ) + [
+        f'-F{PREFIX}/python',
+        '-framework',
+        'Python',
+        '-framework',
+        'CoreFoundation',
+        '-headerpad_max_install_names',
+    ]
+
     # print('\t'+' '.join(cmd))
     sys.stdout.flush()
     subprocess.check_call(cmd)
@@ -87,9 +116,20 @@ def compile_launchers(contents_dir, inc_dir, xprograms, pyver):
         programs.append(out)
         is_gui = 'true' if ptype == 'gui' else 'false'
         cmd = [
-            gcc, '-Wall', f'-DPROGRAM=L"{program}"', f'-DMODULE=L"{module}"', f'-DFUNCTION=L"{func}"', f'-DIS_GUI={is_gui}',
-            '-I' + base, src, lib, '-o', out, '-headerpad_max_install_names'
+            gcc,
+            '-Wall',
+            f'-DPROGRAM=L"{program}"',
+            f'-DMODULE=L"{module}"',
+            f'-DFUNCTION=L"{func}"',
+            f'-DIS_GUI={is_gui}',
+            f'-I{base}',
+            src,
+            lib,
+            '-o',
+            out,
+            '-headerpad_max_install_names',
         ]
+
         # print('\t'+' '.join(cmd))
         sys.stdout.flush()
         subprocess.check_call(cmd)
@@ -201,7 +241,7 @@ class Freeze(object):
             self.create_gui_apps()
 
         self.run_tests()
-        ret = self.makedmg(self.build_dir, APPNAME + '-' + VERSION)
+        ret = self.makedmg(self.build_dir, f'{APPNAME}-{VERSION}')
 
         return ret
 
@@ -222,12 +262,14 @@ class Freeze(object):
     @flush
     def create_exe(self):
         print('\nCreating launchers')
-        programs = {}
         progs = []
         for x in ('console', 'gui'):
             progs += list(zip(basenames[x], main_modules[x], main_functions[x], repeat(x)))
-        for program, module, func, ptype in progs:
-            programs[program] = (module, func, ptype)
+        programs = {
+            program: (module, func, ptype)
+            for program, module, func, ptype in progs
+        }
+
         programs = compile_launchers(self.contents_dir, self.inc_dir, programs, py_ver)
         for out in programs:
             self.fix_dependencies_in_lib(out)
@@ -258,10 +300,10 @@ class Freeze(object):
             elif x == 'libunrar.dylib' and not is_id:
                 yield x, x, is_id
             else:
-                for y in (PREFIX + '/lib/', PREFIX + '/python/Python.framework/'):
+                for y in (f'{PREFIX}/lib/', f'{PREFIX}/python/Python.framework/'):
                     if x.startswith(y):
-                        if y == PREFIX + '/python/Python.framework/':
-                            y = PREFIX + '/python/'
+                        if y == f'{PREFIX}/python/Python.framework/':
+                            y = f'{PREFIX}/python/'
                         yield x, x[len(y):], is_id
                         break
 
@@ -275,10 +317,9 @@ class Freeze(object):
         self.to_strip.append(path_to_lib)
         old_mode = flipwritable(path_to_lib)
         for dep, bname, is_id in self.get_local_dependencies(path_to_lib):
-            ndep = self.FID + '/' + bname
+            ndep = f'{self.FID}/{bname}'
             self.change_dep(dep, ndep, is_id, path_to_lib)
-        ldeps = list(self.get_local_dependencies(path_to_lib))
-        if ldeps:
+        if ldeps := list(self.get_local_dependencies(path_to_lib)):
             print('\nFailed to fix dependencies in', path_to_lib)
             print('Remaining local dependencies:', ldeps)
             raise SystemExit(1)
@@ -288,7 +329,7 @@ class Freeze(object):
     @flush
     def add_python_framework(self):
         print('\nAdding Python framework')
-        src = join(PREFIX + '/python', 'Python.framework')
+        src = join(f'{PREFIX}/python', 'Python.framework')
         x = join(self.frameworks_dir, 'Python.framework')
         curr = os.path.realpath(join(src, 'Versions', 'Current'))
         currd = join(x, 'Versions', basename(curr))
@@ -296,13 +337,16 @@ class Freeze(object):
         os.makedirs(rd)
         shutil.copy2(join(curr, 'Resources', 'Info.plist'), rd)
         shutil.copy2(join(curr, 'Python'), currd)
-        self.set_id(join(currd, 'Python'),
-                    self.FID + '/Python.framework/Versions/%s/Python' % basename(curr))
+        self.set_id(
+            join(currd, 'Python'),
+            self.FID + f'/Python.framework/Versions/{basename(curr)}/Python',
+        )
+
         # The following is needed for codesign in OS X >= 10.9.5
         with current_dir(x):
             os.symlink(basename(curr), 'Versions/Current')
             for y in ('Python', 'Resources'):
-                os.symlink('Versions/Current/%s' % y, y)
+                os.symlink(f'Versions/Current/{y}', y)
 
     @flush
     def add_qt_frameworks(self):
@@ -317,7 +361,7 @@ class Freeze(object):
         for l in glob.glob(join(ddir, '*/*.dylib')):
             self.fix_dependencies_in_lib(l)
             x = os.path.relpath(l, ddir)
-            self.set_id(l, '@executable_path/' + x)
+            self.set_id(l, f'@executable_path/{x}')
         webengine_process = join(
             self.frameworks_dir, 'QtWebEngineCore.framework/Versions/5/Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess')
         self.fix_dependencies_in_lib(webengine_process)
@@ -327,7 +371,7 @@ class Freeze(object):
 
     def add_qt_framework(self, f):
         libname = f
-        f = f + '.framework'
+        f = f'{f}.framework'
         src = join(PREFIX, 'qt', 'lib', f)
         ignore = shutil.ignore_patterns('Headers', '*.h', 'Headers/*')
         dest = join(self.frameworks_dir, f)
@@ -335,7 +379,7 @@ class Freeze(object):
                         ignore=ignore)
         lib = os.path.realpath(join(dest, libname))
         rpath = os.path.relpath(lib, self.frameworks_dir)
-        self.set_id(lib, self.FID + '/' + rpath)
+        self.set_id(lib, f'{self.FID}/{rpath}')
         self.fix_dependencies_in_lib(lib)
         # The following is needed for codesign in OS X >= 10.9.5
         # The presence of the .prl file in the root of the framework causes
@@ -368,8 +412,8 @@ class Freeze(object):
             os.symlink(os.path.relpath(src, cdir), dest)
             pl = dict(
                 CFBundleDevelopmentRegion='English',
-                CFBundleDisplayName=APPNAME + ' - utils',
-                CFBundleName=APPNAME + '-utils',
+                CFBundleDisplayName=f'{APPNAME} - utils',
+                CFBundleName=f'{APPNAME}-utils',
                 CFBundleIdentifier='com.calibre-ebook.utils',
                 LSBackgroundOnly='1',
                 CFBundleVersion=VERSION,
@@ -382,6 +426,7 @@ class Freeze(object):
                 NSAppleScriptEnabled=False,
                 CFBundleIconFile='',
             )
+
             with open(join(cdir, 'Info.plist'), 'wb') as p:
                 plistlib.dump(pl, p)
 
@@ -391,9 +436,9 @@ class Freeze(object):
         os.mkdir(dest)
         print('Extracting extension modules from:', self.ext_dir, 'to', dest)
         self.ext_map = extract_extension_modules(self.ext_dir, dest)
-        plugins = glob.glob(dest + '/*.so')
+        plugins = glob.glob(f'{dest}/*.so')
         if not plugins:
-            raise SystemExit('No calibre plugins found in: ' + self.ext_dir)
+            raise SystemExit(f'No calibre plugins found in: {self.ext_dir}')
         for f in plugins:
             self.fix_dependencies_in_lib(f)
             if f.endswith('/podofo.so'):
@@ -451,8 +496,7 @@ class Freeze(object):
         os.makedirs(dest, exist_ok=True)
         shutil.copy2(path, dest)
         if set_id:
-            self.set_id(join(dest, basename(path)),
-                        self.FID + '/' + basename(path))
+            self.set_id(join(dest, basename(path)), f'{self.FID}/{basename(path)}')
         self.fix_dependencies_in_lib(join(dest, basename(path)))
 
     @flush
@@ -474,7 +518,7 @@ class Freeze(object):
     def add_imaging_libs(self):
         print('\nAdding libjpeg, libpng, libwebp, optipng and mozjpeg')
         for x in ('jpeg.8', 'png16.16', 'webp.7', 'webpmux.3', 'webpdemux.2'):
-            self.install_dylib(join(PREFIX, 'lib', 'lib%s.dylib' % x))
+            self.install_dylib(join(PREFIX, 'lib', f'lib{x}.dylib'))
         for x in 'optipng', 'JxrDecApp':
             self.install_dylib(join(PREFIX, 'bin', x), set_id=False, dest=self.helpers_dir)
         for x in ('jpegtran', 'cjpeg'):
@@ -485,7 +529,7 @@ class Freeze(object):
     def add_fontconfig(self):
         print('\nAdding fontconfig')
         for x in ('fontconfig.1', 'freetype.6', 'expat.1'):
-            src = join(PREFIX, 'lib', 'lib' + x + '.dylib')
+            src = join(PREFIX, 'lib', f'lib{x}.dylib')
             self.install_dylib(src)
         dst = join(self.resources_dir, 'fonts')
         if os.path.exists(dst):
@@ -514,11 +558,11 @@ class Freeze(object):
             'crypto.1.1', 'ssl.1.1', 'iconv.2',  # 'ltdl.7'
         ):
             print('\nAdding', x)
-            x = 'lib%s.dylib' % x
+            x = f'lib{x}.dylib'
             src = join(PREFIX, 'lib', x)
             shutil.copy2(src, self.frameworks_dir)
             dest = join(self.frameworks_dir, x)
-            self.set_id(dest, self.FID + '/' + x)
+            self.set_id(dest, f'{self.FID}/{x}')
             self.fix_dependencies_in_lib(dest)
 
     @flush
@@ -568,9 +612,11 @@ class Freeze(object):
     def add_packages_from_dir(self, src):
         for x in os.listdir(src):
             x = join(src, x)
-            if os.path.isdir(x) and os.path.exists(join(x, '__init__.py')):
-                if self.filter_package(basename(x)):
-                    continue
+            if (
+                os.path.isdir(x)
+                and os.path.exists(join(x, '__init__.py'))
+                and not self.filter_package(basename(x))
+            ):
                 self.add_package_dir(x)
 
     @flush
@@ -607,7 +653,7 @@ class Freeze(object):
     @flush
     def add_stdlib(self):
         print('\nAdding python stdlib')
-        src = PREFIX + '/python/Python.framework/Versions/Current/lib/python'
+        src = f'{PREFIX}/python/Python.framework/Versions/Current/lib/python'
         src += py_ver
         dest = join(self.resources_dir, 'Python', 'lib', 'python')
         dest += py_ver
@@ -682,7 +728,7 @@ class Freeze(object):
                 exe = plist['CFBundleExecutable']
                 # We cannot symlink the bundle executable as if we do,
                 # codesigning fails
-                plist['CFBundleExecutable'] = exe + '-placeholder-for-codesigning'
+                plist['CFBundleExecutable'] = f'{exe}-placeholder-for-codesigning'
                 nexe = join(exe_dir, plist['CFBundleExecutable'])
                 base = os.path.dirname(abspath(__file__))
                 cmd = [
@@ -718,8 +764,8 @@ class Freeze(object):
                 'ebook-viewer': 'E-book Viewer', 'ebook-edit': 'Edit Book',
             }[launcher]
             plist['CFBundleExecutable'] = launcher
-            plist['CFBundleIdentifier'] = 'com.calibre-ebook.' + launcher
-            plist['CFBundleIconFile'] = launcher + '.icns'
+            plist['CFBundleIdentifier'] = f'com.calibre-ebook.{launcher}'
+            plist['CFBundleIconFile'] = f'{launcher}.icns'
             e = plist['CFBundleDocumentTypes'][0]
             e['CFBundleTypeExtensions'] = [x.lower() for x in formats]
 
@@ -743,8 +789,10 @@ class Freeze(object):
     @flush
     def copy_site(self):
         base = os.path.dirname(abspath(__file__))
-        shutil.copy2(join(base, 'site.py'), join(self.resources_dir, 'Python',
-                                                 'lib', 'python' + py_ver))
+        shutil.copy2(
+            join(base, 'site.py'),
+            join(self.resources_dir, 'Python', 'lib', f'python{py_ver}'),
+        )
 
     @flush
     def makedmg(self, d, volname):
@@ -758,7 +806,7 @@ class Freeze(object):
             if err.errno != errno.ENOENT:
                 raise
         os.mkdir(destdir)
-        dmg = join(destdir, volname + '.dmg')
+        dmg = join(destdir, f'{volname}.dmg')
         if os.path.exists(dmg):
             os.unlink(dmg)
         tdir = tempfile.mkdtemp()
@@ -788,7 +836,7 @@ class Freeze(object):
 
 
 def main(args, ext_dir, test_runner):
-    build_dir = abspath(join(mkdtemp('frozen-'), APPNAME + '.app'))
+    build_dir = abspath(join(mkdtemp('frozen-'), f'{APPNAME}.app'))
     inc_dir = abspath(mkdtemp('include'))
     if args.skip_tests:
         test_runner = lambda *a: None

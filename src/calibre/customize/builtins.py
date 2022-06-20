@@ -36,7 +36,7 @@ class PML2PMLZ(FileTypePlugin):
         pmlz = zipfile.ZipFile(of.name, 'w')
         pmlz.write(pmlfile, os.path.basename(pmlfile), zipfile.ZIP_DEFLATED)
 
-        pml_img = os.path.splitext(pmlfile)[0] + '_img'
+        pml_img = f'{os.path.splitext(pmlfile)[0]}_img'
         i_img = os.path.join(os.path.dirname(pmlfile),'images')
         img_dir = pml_img if os.path.isdir(pml_img) else i_img if \
             os.path.isdir(i_img) else ''
@@ -77,12 +77,16 @@ class TXT2TXTZ(FileTypePlugin):
                 images.append(path)
 
         # Markdown reference
-        refs = {}
-        for m in re.finditer(r'(?mu)^(\ ?\ ?\ ?)\[(?P<id>[^\]]*)\]:\s*(?P<path>[^\s]*)$', txt):
-            if m.group('id') and m.group('path'):
-                refs[m.group('id')] = m.group('path')
+        refs = {
+            m.group('id'): m.group('path')
+            for m in re.finditer(
+                r'(?mu)^(\ ?\ ?\ ?)\[(?P<id>[^\]]*)\]:\s*(?P<path>[^\s]*)$', txt
+            )
+            if m.group('id') and m.group('path')
+        }
+
         for m in re.finditer(r'(?mu)\!\[([^\]\[]*(\[[^\]\[]*(\[[^\]\[]*(\[[^\]\[]*(\[[^\]\[]*(\[[^\]\[]*(\[[^\]\[]*\])*[^\]\[]*\])*[^\]\[]*\])*[^\]\[]*\])*[^\]\[]*\])*[^\]\[]*\])*[^\]\[]*)\]\s*\[(?P<id>[^\]]*)\]', txt):  # noqa
-            path = refs.get(m.group('id'), None)
+            path = refs.get(m.group('id'))
             if path and not os.path.isabs(path) and guess_type(path)[0] in OEB_IMAGES and os.path.exists(os.path.join(base_dir, path)):
                 images.append(path)
 
@@ -95,33 +99,30 @@ class TXT2TXTZ(FileTypePlugin):
         with open(path_to_ebook, 'rb') as ebf:
             txt = ebf.read().decode('utf-8', 'replace')
         base_dir = os.path.dirname(path_to_ebook)
-        images = self._get_image_references(txt, base_dir)
-
-        if images:
-            # Create TXTZ and put file plus images inside of it.
-            import zipfile
-            of = self.temporary_file('_plugin_txt2txtz.txtz')
-            txtz = zipfile.ZipFile(of.name, 'w')
-            # Add selected TXT file to archive.
-            txtz.write(path_to_ebook, os.path.basename(path_to_ebook), zipfile.ZIP_DEFLATED)
-            # metadata.opf
-            if os.path.exists(os.path.join(base_dir, 'metadata.opf')):
-                txtz.write(os.path.join(base_dir, 'metadata.opf'), 'metadata.opf', zipfile.ZIP_DEFLATED)
-            else:
-                from calibre.ebooks.metadata.txt import get_metadata
-                with open(path_to_ebook, 'rb') as ebf:
-                    mi = get_metadata(ebf)
-                opf = metadata_to_opf(mi)
-                txtz.writestr('metadata.opf', opf, zipfile.ZIP_DEFLATED)
-            # images
-            for image in images:
-                txtz.write(os.path.join(base_dir, image), image)
-            txtz.close()
-
-            return of.name
-        else:
+        if not (images := self._get_image_references(txt, base_dir)):
             # No images so just import the TXT file.
             return path_to_ebook
+        # Create TXTZ and put file plus images inside of it.
+        import zipfile
+        of = self.temporary_file('_plugin_txt2txtz.txtz')
+        txtz = zipfile.ZipFile(of.name, 'w')
+        # Add selected TXT file to archive.
+        txtz.write(path_to_ebook, os.path.basename(path_to_ebook), zipfile.ZIP_DEFLATED)
+        # metadata.opf
+        if os.path.exists(os.path.join(base_dir, 'metadata.opf')):
+            txtz.write(os.path.join(base_dir, 'metadata.opf'), 'metadata.opf', zipfile.ZIP_DEFLATED)
+        else:
+            from calibre.ebooks.metadata.txt import get_metadata
+            with open(path_to_ebook, 'rb') as ebf:
+                mi = get_metadata(ebf)
+            opf = metadata_to_opf(mi)
+            txtz.writestr('metadata.opf', opf, zipfile.ZIP_DEFLATED)
+        # images
+        for image in images:
+            txtz.write(os.path.join(base_dir, image), image)
+        txtz.close()
+
+        return of.name
 
 
 plugins += [HTML2ZIP, PML2PMLZ, TXT2TXTZ, ArchiveExtract, KPFExtract]
@@ -468,12 +469,18 @@ class EPUBMetadataWriter(MetadataWriterPlugin):
     def set_metadata(self, stream, mi, type):
         from calibre.ebooks.metadata.epub import set_metadata
         q = self.site_customization or ''
-        set_metadata(stream, mi, apply_null=self.apply_null, force_identifiers=self.force_identifiers, add_missing_cover='disable-add-missing-cover' != q)
+        set_metadata(
+            stream,
+            mi,
+            apply_null=self.apply_null,
+            force_identifiers=self.force_identifiers,
+            add_missing_cover=q != 'disable-add-missing-cover',
+        )
 
     def customization_help(self, gui=False):
         h = 'disable-add-missing-cover'
         if gui:
-            h = '<i>' + h + '</i>'
+            h = f'<i>{h}</i>'
         return _('Enter {0} below to have the EPUB metadata writer plugin not'
                  ' add cover images to EPUB files that have no existing cover image.').format(h)
 

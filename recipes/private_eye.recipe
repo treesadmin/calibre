@@ -87,8 +87,7 @@ class PrivateEyeRecipe(BasicNewsRecipe):
             date = self.edition_date
         if url and url not in self.urls:
             self.urls.append(url)
-            self.log.info(
-                "Page added: %s: %s: %s (%s)" % (date, title, description, url))
+            self.log.info(f"Page added: {date}: {title}: {description} ({url})")
             self.current_articles.append({
                 'title': title,
                 'url': url,
@@ -102,17 +101,15 @@ class PrivateEyeRecipe(BasicNewsRecipe):
 
     # Process the Index page to get the content for the ebook
     def parse_index(self):
-        self.log.info('Private Eye: v%s,Parse Index: %s' % (self.version,self.INDEX))
+        self.log.info(f'Private Eye: v{self.version},Parse Index: {self.INDEX}')
         self.page_index = []
 
         soup = self.index_to_soup(self.INDEX)
         for comment in soup.findAll(text=lambda text: isinstance(text, Comment)):
             comment.extract()
-        # Get masthead URL
-        masthead = soup.find('img', id='site-logo')
-        if masthead:
+        if masthead := soup.find('img', id='site-logo'):
             self.masthead_url = self.fix_url(masthead['src'])
-            self.log.debug('Masthead found: %s' % self.masthead_url)
+            self.log.debug(f'Masthead found: {self.masthead_url}')
         else:
             self.log.warning('Masthead not found.')
 
@@ -124,7 +121,7 @@ class PrivateEyeRecipe(BasicNewsRecipe):
                 self.cover_url = img['src']
                 filename = img['src'].split('/')[-1]
                 self.issue_no = filename.replace('_big.jpg', '')
-                self.log.debug('Cover image found. Issue: %s' % self.issue_no)
+                self.log.debug(f'Cover image found. Issue: {self.issue_no}')
                 break
         else:
             self.log.warning('Cover image NOT found')
@@ -141,23 +138,21 @@ class PrivateEyeRecipe(BasicNewsRecipe):
                     date = date - timedelta(11)
                     self.edition_date = datetime.strftime(
                         date, "%d %B %Y").lstrip("0")
-                    self.log.debug("Publication date: %s" % self.edition_date)
+                    self.log.debug(f"Publication date: {self.edition_date}")
                     self.title_with_date = self.title + datetime.strftime(
                         date, " %Y-%m-%d")
                     break
                 except:
-                    self.log.warning(
-                        "Invalid publication date: %s" % tag.contents[2])
+                    self.log.warning(f"Invalid publication date: {tag.contents[2]}")
         else:
             self.log.warning("Publication date not found")
 
         # Online articles
         online = soup.find('div', {'id': 'block-left'})
 
-        headline = online.find('span', {'class': 'headline'})
-        if headline:
+        if headline := online.find('span', {'class': 'headline'}):
             current_section = headline.string
-            self.log.debug('Headline found: %s' % current_section)
+            self.log.debug(f'Headline found: {current_section}')
         else:
             current_section = 'Online Edition'
             self.log.warning('Headline not found: Default used')
@@ -178,12 +173,10 @@ class PrivateEyeRecipe(BasicNewsRecipe):
                 else:
                     self.add_article(title, url, r"\r\n".join(descriptions))
                     title, url, descriptions = "", "", []
-            else:
-                desc = piece.strip(" \r\n")
-                if desc:
-                    descriptions.append(desc)
+            elif desc := piece.strip(" \r\n"):
+                descriptions.append(desc)
         self.add_article(title, url, r"\r\n".join(descriptions))
-        self.add_article("Number Crunching", self.DOMAIN + "number-crunching", "")
+        self.add_article("Number Crunching", f"{self.DOMAIN}number-crunching", "")
         self.page_index_append(current_section)
 
         # Process More From This Issue (crossword etc.)
@@ -202,13 +195,11 @@ class PrivateEyeRecipe(BasicNewsRecipe):
         current_section = more.string
         more = more.findNextSibling()
         while more.name == 'div' and get_classes(more) == ['box-contents']:
-            title_tag = more.find('a', {'class': 'header-home'})
-            if title_tag:
+            if title_tag := more.find('a', {'class': 'header-home'}):
                 title = title_tag.string
                 if not url:
                     url = self.fix_url(title_tag.get('href', ''))
-            desc_tag = more.find('a', {'class': 'header'})
-            if desc_tag:
+            if desc_tag := more.find('a', {'class': 'header'}):
                 descriptions.append(self.tag_to_string(desc_tag))
                 if not url:
                     url = self.fix_url(desc_tag.get('href', ''))
@@ -220,12 +211,14 @@ class PrivateEyeRecipe(BasicNewsRecipe):
         # Add the PE About Us page.
         self.add_article(
             "About Private Eye",
-            self.DOMAIN + "about",
+            f"{self.DOMAIN}about",
             """Private Eye is the UK's number one best-selling news and current affairs magazine, edited by Ian Hislop.
 
 It offers a unique blend of humour, social and political observations and investigative journalism.\
  Published fortnightly, the magazine is read by over 700,000 readers and costs just £1.80 an issue.""",
-            date="")
+            date="",
+        )
+
         self.page_index_append("About Private Eye")
 
         self.log.info('Private Eye: Parse Index complete')

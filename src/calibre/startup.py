@@ -33,8 +33,7 @@ def get_debug_executable():
     nearby = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), exe_name)
     if getattr(sys, 'frozen', False):
         return [nearby]
-    exloc = getattr(sys, 'executables_location', None)
-    if exloc:
+    if exloc := getattr(sys, 'executables_location', None):
         ans = os.path.join(exloc, exe_name)
         if os.path.exists(ans):
             return [ans]

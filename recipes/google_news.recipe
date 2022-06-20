@@ -52,19 +52,54 @@ class google_news_de(BasicNewsRecipe):
         country_code = str(data['country_code']).lower()  # for me this is de
         city = data['city']
         self.feeds = [
-            ('Google news Topnews for ' + country_code,
-             'https://news.google.com/news?pz=1&cf=all&ned=' + country_code +
-             '&hl=' + country_code + '&output=rss'),
-        ]
-        if city:
-            location = '{},{}'.format(city, country_code)
-            self.feeds.append(
-                ('Google news for ' + location, 'https://news.google.' +
-                country_code + '/news/rss/headlines/section/geo/' + location),
+            (
+                f'Google news Topnews for {country_code}',
+                (
+                    (
+                        (
+                            f'https://news.google.com/news?pz=1&cf=all&ned={country_code}'
+                            + '&hl='
+                        )
+                        + country_code
+                    )
+                    + '&output=rss'
+                ),
             )
-        for searchfor in terms_to_search_for:
+        ]
+
+        if city:
+            location = f'{city},{country_code}'
             self.feeds.append(
-                ('Google news intrested in ' + searchfor,
-                 'https://news.google.com/news?cf=all&hl=' + country_code +
-                 '+&pz=1&ned=' + country_code + '&q=' + searchfor + '&output=rss'))
+                (
+                    f'Google news for {location}',
+                    'https://news.google.'
+                    + country_code
+                    + '/news/rss/headlines/section/geo/'
+                    + location,
+                )
+            )
+
+        self.feeds.extend(
+            (
+                f'Google news intrested in {searchfor}',
+                (
+                    (
+                        (
+                            (
+                                (
+                                    f'https://news.google.com/news?cf=all&hl={country_code}'
+                                    + '+&pz=1&ned='
+                                )
+                                + country_code
+                            )
+                            + '&q='
+                        )
+                        + searchfor
+                    )
+                    + '&output=rss'
+                ),
+            )
+            for searchfor in terms_to_search_for
+        )
+
         return BasicNewsRecipe.get_feeds(self)

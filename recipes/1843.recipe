@@ -35,7 +35,7 @@ class E1843(BasicNewsRecipe):
         for a in soup.findAll(**classes('headline-link')):
             url = a['href']
             if url.startswith('/'):
-                url = 'https://economist.com' + url
+                url = f'https://economist.com{url}'
             title = self.tag_to_string(a)
             self.log(title, ' at ', url)
             desc = ''

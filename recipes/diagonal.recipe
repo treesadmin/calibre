@@ -41,4 +41,4 @@ class AdvancedUserRecipe1335657507(BasicNewsRecipe):
 
     def get_article_url(self, article):
         link = article.get('link')
-        return 'http://diagonalperiodico.net/' + link
+        return f'http://diagonalperiodico.net/{link}'

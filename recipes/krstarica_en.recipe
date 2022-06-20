@@ -44,8 +44,7 @@ class Krstarica_en(BasicNewsRecipe):
     def preprocess_html(self, soup):
         mtag = '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>'
         soup.head.insert(0, mtag)
-        titletag = soup.find('h4')
-        if titletag:
+        if titletag := soup.find('h4'):
             realtag = titletag.parent.parent
             realtag.extract()
             for item in soup.findAll(['table', 'center']):

@@ -85,12 +85,12 @@ def parse_metadata(full_name, raw_bytes):
     m = re.search(br'^module_version\s*=\s*(\d+)', q, flags=re.MULTILINE)
     if m is None:
         raise ValueError(f'No module_version in downloaded source of {full_name}')
-    module_version = int(m.group(1))
+    module_version = int(m[1])
 
     m = re.search(br'^minimum_calibre_version\s*=\s*(.+?)$', q, flags=re.MULTILINE)
     minimum_calibre_version = 0, 0, 0
     if m is not None:
-        minimum_calibre_version = ast.literal_eval(m.group(1).decode('utf-8'))
+        minimum_calibre_version = ast.literal_eval(m[1].decode('utf-8'))
         if not isinstance(minimum_calibre_version, tuple) or len(minimum_calibre_version) != 3 or \
                 not isinstance(minimum_calibre_version[0], int) or not isinstance(minimum_calibre_version[1], int) or\
                 not isinstance(minimum_calibre_version[2], int):
@@ -104,7 +104,7 @@ def fetch_module(full_name, etag=None, timeout=default_timeout, url=None):
         timeout = DEFAULT_TIMEOUT
     if url is None:
         path = '/'.join(full_name.split('.')) + '.py'
-        url = 'https://code.calibre-ebook.com/src/' + path
+        url = f'https://code.calibre-ebook.com/src/{path}'
     headers = {'accept-encoding': 'gzip'}
     if etag:
         headers['if-none-match'] = f'"{etag}"'
@@ -163,8 +163,13 @@ def read_from_cache(full_name):
     rowid = etag = data = date = None
     database = db()
     with suppress(StopIteration):
-        rowid, etag, data, date = next(database.cursor().execute(
-            table_definition() + 'SELECT id, etag, data, date FROM modules WHERE full_name=? LIMIT 1', (full_name,)))
+        rowid, etag, data, date = next(
+            database.cursor().execute(
+                f'{table_definition()}SELECT id, etag, data, date FROM modules WHERE full_name=? LIMIT 1',
+                (full_name,),
+            )
+        )
+
     if rowid is not None:
         database.cursor().execute('UPDATE modules SET atime=CURRENT_TIMESTAMP WHERE id=?', (rowid,))
     if date is not None:
@@ -173,7 +178,7 @@ def read_from_cache(full_name):
 
 
 def clear_cache():
-    db().cursor().execute(table_definition() + 'DELETE FROM modules')
+    db().cursor().execute(f'{table_definition()}DELETE FROM modules')
 
 
 def load_module_from_data(full_name, data):

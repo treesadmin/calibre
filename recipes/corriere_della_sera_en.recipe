@@ -42,7 +42,6 @@ class ilCorriereEn(BasicNewsRecipe):
         segments = articleUrl.split('/')
         basename = '/'.join(segments[:3]) + '/' + \
             'International/english/articoli/'
-
     # the date has to be redone with the url structure
         mlist1 = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
                   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
@@ -55,15 +54,13 @@ class ilCorriereEn(BasicNewsRecipe):
                 noMonth = mlist2[x]
                 break
 
-        newDateUrl = '20' + myDate[0] + '/' + noMonth + '/' + myDate[2] + '/'
-
+        newDateUrl = f'20{myDate[0]}/{noMonth}/{myDate[2]}/'
     # clean the article title
         articleURLseg = segments[5].split('-')
-        myArticle = (articleURLseg[0])[:-9] + '.shtml'
+        myArticle = f'{articleURLseg[0][:-9]}.shtml'
 
-        myURL = basename + newDateUrl + myArticle
         # print myURL
-        return myURL
+        return basename + newDateUrl + myArticle
 
     keep_only_tags = [
         dict(name='div', attrs={'class': ['news-dettaglio article', 'article']})]

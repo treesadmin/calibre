@@ -43,8 +43,7 @@ def iterfiles(only=()):
         if not only and h == hashes.get(name):
             continue
         output_names = [n for n in [name] + duplicates.get(name, []) if n not in skip]
-        output_files = [j(output_base, n) + '.png' for n in output_names]
-        if output_files:
+        if output_files := [f'{j(output_base, n)}.png' for n in output_names]:
             yield src, output_files
 
 

@@ -71,8 +71,11 @@ class Base(Command):
     def get_files(self):
         from calibre import walk
         for path in walk(os.path.join(self.SRC, 'calibre')):
-            if (path.endswith('.py') and not path.endswith('_ui.py') and not
-                    os.path.basename(path) in self.EXCLUDED_BASENAMES):
+            if (
+                path.endswith('.py')
+                and not path.endswith('_ui.py')
+                and os.path.basename(path) not in self.EXCLUDED_BASENAMES
+            ):
                 yield path
 
     def file_hash(self, f):
@@ -137,9 +140,12 @@ class To3(Base):
         finally:
             sys.stdout, sys.stderr = oo, oe
         if ret:
-            raise SystemExit('Could not parse: ' + f)
+            raise SystemExit(f'Could not parse: {f}')
         output = buf.getvalue()
-        return re.search(r'^RefactoringTool: No changes to ' + f, output, flags=re.M) is None
+        return (
+            re.search(f'^RefactoringTool: No changes to {f}', output, flags=re.M)
+            is None
+        )
 
 
 def edit_file(f):
@@ -160,7 +166,7 @@ class UnicodeCheck(Base):
         has_unicode_literals = False
         has_str_calls = False
         num_lines = 0
-        for i, line in enumerate(open(f, 'rb')):
+        for line in open(f, 'rb'):
             line = line.decode('utf-8')
             if not line.strip():
                 continue
@@ -194,10 +200,14 @@ class UnicodeCheck(Base):
 
 
 def has_import(text, module, name):
-    pat = re.compile(r'^from\s+{}\s+import\s+.*\b{}\b'.format(module, name), re.MULTILINE)
+    pat = re.compile(f'^from\s+{module}\s+import\s+.*\b{name}\b', re.MULTILINE)
     if pat.search(text) is not None:
         return True
-    pat = re.compile(r'^from\s+{}\s+import\s+\([^)]*\b{}\b'.format(module, name), re.MULTILINE | re.DOTALL)
+    pat = re.compile(
+        f'^from\s+{module}\s+import\s+\([^)]*\b{name}\b',
+        re.MULTILINE | re.DOTALL,
+    )
+
     if pat.search(text) is not None:
         return True
     return False
@@ -219,25 +229,27 @@ class IteratorsCheck(Base):
         names = {m.group(1) for m in matches}
         imported_names = {n for n in names if has_import(text, 'polyglot.builtins', n)}
         safe_funcs = 'list|tuple|set|frozenset|join'
-        func_pat = r'({})\('.format(safe_funcs)
+        func_pat = f'({safe_funcs})\('
         for_pat = re.compile(r'\bfor\s+.+?\s+\bin\b')
         for i, line in enumerate(text.splitlines()):
             m = pat.search(line)
             if m is not None:
-                itname = m.group(1)
+                itname = m[1]
                 if itname in imported_names:
                     continue
                 start = m.start()
                 if start > 0:
                     if line[start-1] == '*':
                         continue
-                    if line[start-1] == '(':
-                        if re.search(func_pat + itname, line) is not None:
-                            continue
+                    if (
+                        line[start - 1] == '('
+                        and re.search(func_pat + itname, line) is not None
+                    ):
+                        continue
                     fm = for_pat.search(line)
                     if fm is not None and fm.start() < start:
                         continue
-                    ans.append('%s:%s' % (i, itname))
+                    ans.append(f'{i}:{itname}')
         return ans
 
     def file_has_errors(self, f):

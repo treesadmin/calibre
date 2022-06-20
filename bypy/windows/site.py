@@ -44,7 +44,7 @@ class PydImporter:
 
 def run_entry_point():
     bname, mod, func = sys.calibre_basename, sys.calibre_module, sys.calibre_function
-    sys.argv[0] = bname + '.exe'
+    sys.argv[0] = f'{bname}.exe'
     pmod = import_module(mod)
     return getattr(pmod, func)()
 

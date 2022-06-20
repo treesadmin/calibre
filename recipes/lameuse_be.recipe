@@ -50,6 +50,6 @@ class LaMeuse(BasicNewsRecipe):
     ]
 
     def get_cover_url(self):
-        cover_url = strftime(
-            'http://pdf.lameuse.be/pdf/lameuse_%Y-%m-%d_LIEG_ACTUALITE_1.PDF')
-        return cover_url
+        return strftime(
+            'http://pdf.lameuse.be/pdf/lameuse_%Y-%m-%d_LIEG_ACTUALITE_1.PDF'
+        )

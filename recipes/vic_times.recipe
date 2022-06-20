@@ -99,7 +99,7 @@ class TimesColonist(BasicNewsRecipe):
                             dict(name='div', attrs={
                                  'class': re.compile('window')}),
                             dict(name='div', attrs={'class': re.compile('related.news.element')})]
-        print("PROFILE NAME = " + options.output_profile.short_name)
+        print(f"PROFILE NAME = {options.output_profile.short_name}")
         if self.kindle_omit_images and options.output_profile.short_name in ['kindle', 'kindle_dx', 'kindle_pw']:
             self.remove_tags.append(
                 dict(name='div', attrs={'class': re.compile('image-container')}))
@@ -122,7 +122,7 @@ class TimesColonist(BasicNewsRecipe):
                 try:
                     br.open(cover)
                 except:
-                    daysback = daysback + 1
+                    daysback += 1
                     continue
                 break
         if daysback == 7:
@@ -194,7 +194,7 @@ class TimesColonist(BasicNewsRecipe):
             ptext = self.tag_to_string(
                 ptag, use_alt=False, normalize_whitespace=True)
             ptext = re.sub(r'\s+', '', ptext)
-            if (ptext == '') or (ptext == '&nbsp;'):
+            if ptext in ['', '&nbsp;']:
                 ptag.extract()
         return self.strip_anchors(soup)
 
@@ -223,18 +223,16 @@ class TimesColonist(BasicNewsRecipe):
                     return
                 self.raeside = True
             dtag = htag.findNext('p')
-            description = ''
-            if dtag is not None:
-                description = self.tag_to_string(dtag, False)
+            description = self.tag_to_string(dtag, False) if dtag is not None else ''
             article_list.append(dict(
                 title=title, url=url, date='', description=description, author='', content=''))
             print(sectitle + title + ": description = " +
                   description + " URL=" + url + '\n\r')
 
     def add_section_index(self, ans, securl, sectitle):
-        print("Add section url=" + self.url_prefix + '/' + securl + '\n\r')
+        print(f"Add section url={self.url_prefix}/{securl}" + '\n\r')
         try:
-            soup = self.index_to_soup(self.url_prefix + '/' + securl)
+            soup = self.index_to_soup(f'{self.url_prefix}/{securl}')
         except:
             return ans
         mainsoup = soup.find(

@@ -268,8 +268,14 @@ class ZeitEPUBAbo(BasicNewsRecipe):
             # actual cover search
             pdflink = browser.find_link(text_regex=re.compile(
                 '.*GESAMT-PDF LADEN.*'))
-            cover_url = urlparse(pdflink.base_url)[0] + '://' + urlparse(pdflink.base_url)[1] + '' + (
-                urlparse(pdflink.url)[2]).replace('ePaper_', '').replace('.pdf', '_001.pdf')
+            cover_url = f'{urlparse(pdflink.base_url)[0]}://{urlparse(pdflink.base_url)[1]}' + (
+                urlparse(pdflink.url)[2]
+            ).replace(
+                'ePaper_', ''
+            ).replace(
+                '.pdf', '_001.pdf'
+            )
+
             self.log.warning('PDF link found:')
             self.log.warning(cover_url)
             # download the cover (has to be here due to new login process)
@@ -277,11 +283,8 @@ class ZeitEPUBAbo(BasicNewsRecipe):
                 cdata = r.read()
             from calibre.ebooks.metadata.pdf import get_metadata
             stream = io.BytesIO(cdata)
-            cdata = None
             mi = get_metadata(stream)
-            if mi.cover_data and mi.cover_data[1]:
-                cdata = mi.cover_data[1]
-
+            cdata = mi.cover_data[1] if mi.cover_data and mi.cover_data[1] else None
             cpath = os.path.join(self.output_dir, 'cover.jpg')
             save_cover_data_to(cdata, cpath)
             cover_url = cpath

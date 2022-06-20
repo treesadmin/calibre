@@ -53,16 +53,13 @@ class CanWestPaper(BasicNewsRecipe):
                    dict(name='li', attrs={'class': 'print'}), dict(name='li', attrs={'class': 'share'}), dict(name='ul', attrs={'class': 'bullet'})]
 
     def preprocess_html(self, soup):
-        # delete iempty id attributes--they screw up the TOC for unknow reasons
-        divtags = soup.findAll('div', attrs={'id': ''})
-        if divtags:
+        if divtags := soup.findAll('div', attrs={'id': ''}):
             for div in divtags:
                 del(div['id'])
         return soup
 
     def parse_index(self):
-        soup = self.index_to_soup(
-            self.url_prefix + '/news/todays-paper/index.html')
+        soup = self.index_to_soup(f'{self.url_prefix}/news/todays-paper/index.html')
 
         articles = {}
         key = 'News'
@@ -76,7 +73,7 @@ class CanWestPaper(BasicNewsRecipe):
                     continue
                 key = self.tag_to_string(divtag.h3, False)
                 ans.append(key)
-                self.log("Section name %s" % key)
+                self.log(f"Section name {key}")
                 continue
             # div contains article data
             h1tag = divtag.find('h1')
@@ -85,16 +82,14 @@ class CanWestPaper(BasicNewsRecipe):
             atag = h1tag.find('a', href=True)
             if not atag:
                 continue
-            url = self.url_prefix + '/news/todays-paper/' + atag['href']
+            url = f'{self.url_prefix}/news/todays-paper/' + atag['href']
             title = self.tag_to_string(atag, False)
             pubdate = ''
             description = ''
-            ptag = divtag.find('p')
-            if ptag:
+            if ptag := divtag.find('p'):
                 description = self.tag_to_string(ptag, False)
             author = ''
-            autag = divtag.find('h4')
-            if autag:
+            if autag := divtag.find('h4'):
                 author = self.tag_to_string(autag, False)
             if key not in articles:
                 articles[key] = []

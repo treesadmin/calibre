@@ -89,9 +89,7 @@ class DunyaHalleri(BasicNewsRecipe):
         h2.append(article_title)
         span.insert(0, h2)
 
-        # featured image insert
-        meta = soup.findAll('meta', {'property': 'og:image'}, limit=1)[0]
-        if meta:
+        if meta := soup.findAll('meta', {'property': 'og:image'}, limit=1)[0]:
             img = new_tag(soup, 'img')
             img.attrs = [('src', meta['content'])]
             span.insert(1, img)
@@ -113,15 +111,14 @@ class DunyaHalleri(BasicNewsRecipe):
             caption = new_tag(soup, 'pre')
             img = new_tag(soup, 'img')
 
-            m = re.match(
+            if m := re.match(
                 r'https\:\/\/(www\.)?youtube.com\/(embed\/|watch\?v\=)'
                 r'(?P<vid>.*?)(([\?\&].*)|$|\n)',
-                iframe['src'])
-            if m:
+                iframe['src'],
+            ):
                 # youtube
-                img_src = 'https://img.youtube.com/vi/' + \
-                    m.group('vid') + '/0.jpg'
-                a_href = 'https://www.youtube.com/watch?v=' + m.group('vid')
+                img_src = (('https://img.youtube.com/vi/' + m['vid']) + '/0.jpg')
+                a_href = 'https://www.youtube.com/watch?v=' + m['vid']
             else:
                 # not youtube
                 # default cover image for non-youtube embeded pages
@@ -129,7 +126,7 @@ class DunyaHalleri(BasicNewsRecipe):
                 a_href = iframe['src']
 
             img.attrs = [('src', img_src)]
-            caption.append('Video: ' + a_href)
+            caption.append(f'Video: {a_href}')
             caption.attrs = [('class', 'caption')]
             a.attrs = [('href', a_href), ('target', '_blank')]
             a.append(img)
@@ -161,8 +158,7 @@ class DunyaHalleri(BasicNewsRecipe):
     def download_cover_img(self):
         try:
             self._download_cover_img()
-            self.report_progress(
-                1, ('Downloaded cover to %s') % self.cover_img_path)
+            self.report_progress(1, f'Downloaded cover to {self.cover_img_path}')
         except:
             self.log.exception('Failed to download cover img')
             self.cover_img_path = None
@@ -192,8 +188,7 @@ class DunyaHalleri(BasicNewsRecipe):
         self.download_cover_img()
         if getattr(self, 'cover_img_path', None) is not None:
             logo_file = self.cover_img_path
-            self.report_progress(
-                1, ('using cover img from %s') % logo_file)
+            self.report_progress(1, f'using cover img from {logo_file}')
             logo = Image.open(logo_file, 'r')
             width, height = logo.size
             left = max(int((self.COVER_WIDTH - width) / 2.), 0)

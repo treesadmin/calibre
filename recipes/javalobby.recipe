@@ -28,6 +28,4 @@ class Engadget(BasicNewsRecipe):
 
     def get_article_url(self, article):
 
-        url = article.get('link', None)
-
-        return url
+        return article.get('link', None)

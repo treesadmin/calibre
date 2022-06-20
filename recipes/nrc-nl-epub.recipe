@@ -60,5 +60,4 @@ class NRCHandelsblad(BasicNewsRecipe):
 
         zfile = zipfile.ZipFile(BytesIO(epubraw), 'r')
         zfile.extractall(self.output_dir)
-        index = os.path.join(self.output_dir, 'metadata.opf')
-        return index
+        return os.path.join(self.output_dir, 'metadata.opf')

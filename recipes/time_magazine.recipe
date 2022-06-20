@@ -24,11 +24,11 @@ class TimeMagazine(BasicNewsRecipe):
         # self.time_magazine_page = open('/t/raw.html').read()
         # return br
         base = 'http://subscription-assets.time.com/prod/assets/themes/magazines/SUBS/templates/velocity/site/td-pcslogin/'
-        url = base + 'login.html'
+        url = f'{base}login.html'
         br.open(url)
         br.select_form(nr=0)
-        br.form.action = 'https://auth.time.com/login.php?rurl={}&turl={}'.format(
-            url, 'http://time.com/magazine')
+        br.form.action = f'https://auth.time.com/login.php?rurl={url}&turl=http://time.com/magazine'
+
         br['username'] = self.username
         br['password'] = self.password
         r = br.submit()
@@ -48,7 +48,7 @@ class TimeMagazine(BasicNewsRecipe):
             raise ValueError(
                 'The TIME website has changed, this recipe needs to be rewritten')
         data = data['magazine']['us'][0]
-        self.timefmt = ' [%s]' % data['title'].split('|')[0].strip()
+        self.timefmt = f" [{data['title'].split('|')[0].strip()}]"
         self.cover_url = data['hero']['src']['large']
         articles = []
         self.turl_map = {}
@@ -64,16 +64,18 @@ class TimeMagazine(BasicNewsRecipe):
                 cover_url = article['hero']['src']['large']
             except Exception:
                 cover_url = ''
-            authors = ''
-            for aut in article.get('authors') or ():
-                authors += '<p>' + aut.get('bio') + '</p>'
+            authors = ''.join(
+                '<p>' + aut.get('bio') + '</p>'
+                for aut in article.get('authors') or ()
+            )
+
             articles.append({'title': title, 'url': url, 'desc': desc})
-            text = '<html><head><meta charset="utf-8"></head><body><h1>{}</h1>{}<div><img src="{}"></div><div>{}</div></body></html>'.format(
-                title, authors, cover_url, article['content'])
+            text = f"""<html><head><meta charset="utf-8"></head><body><h1>{title}</h1>{authors}<div><img src="{cover_url}"></div><div>{article['content']}</div></body></html>"""
+
             with PersistentTemporaryFile('-time-recipe.html') as f:
                 f.write(text.encode('utf-8'))
             name = ('/' if iswindows else '') + f.name
-            self.turl_map[url] = 'file://' + name
+            self.turl_map[url] = f'file://{name}'
         return [('Articles', articles)]
 
     def print_version(self, url):

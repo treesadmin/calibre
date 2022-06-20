@@ -86,7 +86,7 @@ def generate_template_language_help(language):
     cats = sorted(funcs.keys())
     for cat in cats:
         output += CATEGORY_TEMPLATE.format(category=cat, dashes='-'*len(cat))
-        entries = [k for k in sorted(funcs[cat].keys())]
+        entries = list(sorted(funcs[cat].keys()))
         for entry in entries:
             output += FUNCTION_TEMPLATE.format(fs=entry, cn=funcs[cat][entry],
                                                hats='^'*len(entry))

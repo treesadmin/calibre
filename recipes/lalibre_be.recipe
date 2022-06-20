@@ -48,6 +48,6 @@ class LaLibre(BasicNewsRecipe):
         return soup
 
     def get_cover_url(self):
-        cover_url = strftime(
-            'http://pdf-online.lalibre.be/pdfonline/image/%Y%m%d/llb_%Y%m%d_nam_libre_001.pdf.L.jpg')
-        return cover_url
+        return strftime(
+            'http://pdf-online.lalibre.be/pdfonline/image/%Y%m%d/llb_%Y%m%d_nam_libre_001.pdf.L.jpg'
+        )

@@ -27,10 +27,10 @@ class Dilbert(BasicNewsRecipe):
     tempfiles = []
 
     # Creates a temp file for the wrapped image url
-    def writeImage(self, title, imageURL) :
+    def writeImage(self, title, imageURL):
         tempFile = tempfile.NamedTemporaryFile(delete=False)
         self.tempfiles.append(tempFile)
-        tempFile.write('<html><head><title>'+title+'</title></head><body>')
+        tempFile.write(f'<html><head><title>{title}</title></head><body>')
         tempFile.write(imageURL.prettify())
         tempFile.write('</body></html>')
         tempFile.flush()
@@ -54,14 +54,21 @@ class Dilbert(BasicNewsRecipe):
     # 'description' : A summary of the article
     # 'content'     : The full article (can be an empty string). This is used by FullContentProfile
     # }
-    def comicFeed(self, soup) :
+    def comicFeed(self, soup):
         feedset = []
-        for comicContainer in soup.findAll('div', {'class': self.COMIC_DIV_TAG}) :
+        for comicContainer in soup.findAll('div', {'class': self.COMIC_DIV_TAG}):
             comic = comicContainer.find('img')
             if comic is not None:
                 filelink = self.writeImage(comic['alt'], comic)
                 feedset.append(
-                    dict(title=comic['alt'], url='file://'+filelink,  description=comic['alt'], content=''))
+                    dict(
+                        title=comic['alt'],
+                        url=f'file://{filelink}',
+                        description=comic['alt'],
+                        content='',
+                    )
+                )
+
         return feedset
 
     def blogFeed(self, soup) :

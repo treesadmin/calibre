@@ -7,7 +7,7 @@ from css_selectors import Select
 
 def absurl(url):
     if url.startswith('/'):
-        url = 'https://www.scientificamerican.com' + url
+        url = f'https://www.scientificamerican.com{url}'
     return url
 
 
@@ -74,15 +74,16 @@ class ScientificAmerican(BasicNewsRecipe):
     def parse_sciam_features(self, select, section):
         for article in select('article[data-article-title]', section):
             title = article.get('data-article-title')
-            url = 'https://www.scientificamerican.com/{}/'.format(article.get('id').replace('-', '/', 1))
+            url = f"https://www.scientificamerican.com/{article.get('id').replace('-', '/', 1)}/"
+
             desc = ''
             for p in select('p.t_body', article):
                 desc += self.tag_to_string(p)
                 break
             for p in select('.t_meta', article):
-                desc += ' ' + self.tag_to_string(p)
+                desc += f' {self.tag_to_string(p)}'
                 break
-            self.log('Found feature article: %s at %s' % (title, url))
+            self.log(f'Found feature article: {title} at {url}')
             self.log('\t' + desc)
             yield {'title': title, 'url': url, 'description': desc}
 
@@ -95,7 +96,8 @@ class ScientificAmerican(BasicNewsRecipe):
                 section_title, articles = self.tag_to_string(span), []
                 self.log('\nFound section: %s' % section_title)
                 break
-            url = 'https://www.scientificamerican.com/{}/'.format(li.get('id').replace('-', '/', 1))
+            url = f"https://www.scientificamerican.com/{li.get('id').replace('-', '/', 1)}/"
+
             for h2 in select('h2.t_listing-title', li):
                 title = self.tag_to_string(h2)
                 break

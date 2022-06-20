@@ -43,5 +43,4 @@ class LAvenir(BasicNewsRecipe):
         return soup
 
     def get_cover_url(self):
-        cover_url = 'http://www.lavenir.net/extra/Static/journal/Pdf/1/UNE_Nationale.PDF'
-        return cover_url
+        return 'http://www.lavenir.net/extra/Static/journal/Pdf/1/UNE_Nationale.PDF'

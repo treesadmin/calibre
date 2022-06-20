@@ -61,7 +61,7 @@ class AssociatedPress(BasicNewsRecipe):
         return feeds
 
     def parse_section(self, front):
-        url = 'https://afs-prod.appspot.com/api/v2/feed/tag?tags=apf-' + front
+        url = f'https://afs-prod.appspot.com/api/v2/feed/tag?tags=apf-{front}'
         self.log('Processing section:', front, 'at', url)
         data = self.index_to_soup(url, raw=True)
         data = json.loads(data)

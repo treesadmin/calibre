@@ -60,11 +60,12 @@ class Polityka(BasicNewsRecipe):
                         'description': ''
                     })
 
-            for section in articles:
-                feeds.append((section, articles[section]))
+            feeds.extend((section, value) for section, value in articles.items())
+            last_edition = last_edition.replace(
+                f'http://archiwum.polityka.pl/wydanie/{str(last)}',
+                f'http://archiwum.polityka.pl/wydanie/{str(last + 1)}',
+            )
 
-            last_edition = last_edition.replace('http://archiwum.polityka.pl/wydanie/' + str(
-                last), 'http://archiwum.polityka.pl/wydanie/' + str(last + 1))
             last = last + 1
 
         return feeds

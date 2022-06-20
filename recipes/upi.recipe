@@ -38,4 +38,4 @@ class UnitedPressInternational(BasicNewsRecipe):
                 ]
 
     def print_version(self, url):
-        return url + 'print/'
+        return f'{url}print/'

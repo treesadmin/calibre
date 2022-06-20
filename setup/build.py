@@ -28,7 +28,14 @@ def init_symbol_name(name):
 
 
 def absolutize(paths):
-    return list(set([x if os.path.isabs(x) else os.path.join(SRC, x.replace('/', os.sep)) for x in paths]))
+    return list(
+        {
+            x
+            if os.path.isabs(x)
+            else os.path.join(SRC, x.replace('/', os.sep))
+            for x in paths
+        }
+    )
 
 
 class Extension(object):
@@ -57,17 +64,17 @@ class Extension(object):
             extern_decl = 'extern "C"' if self.needs_cxx else ''
 
             self.cflags.append(
-                '-DCALIBRE_MODINIT_FUNC='
-                '{} __attribute__ ((visibility ("default"))) {}'.format(extern_decl, return_type))
+                f'-DCALIBRE_MODINIT_FUNC={extern_decl} __attribute__ ((visibility ("default"))) {return_type}'
+            )
+
 
             if self.needs_cxx:
                 if kwargs.get('needs_c++11'):
                     self.cflags.insert(0, '-std=c++11')
                 elif kwargs.get('needs_c++14'):
                     self.cflags.insert(0, '-std=c++14')
-            else:
-                if kwargs.get('needs_c99'):
-                    self.cflags.insert(0, '-std=c99')
+            elif kwargs.get('needs_c99'):
+                self.cflags.insert(0, '-std=c99')
 
         self.ldflags = d['ldflags'] = kwargs.get('ldflags', [])
         self.optional = d['options'] = kwargs.get('optional', False)
@@ -87,7 +94,9 @@ def lazy_load(name):
     try:
         return getattr(build_environment, name)
     except AttributeError:
-        raise ImportError('The setup.build_environment module has no symbol named: %s' % name)
+        raise ImportError(
+            f'The setup.build_environment module has no symbol named: {name}'
+        )
 
 
 def expand_file_list(items, is_paths=True):
@@ -100,22 +109,26 @@ def expand_file_list(items, is_paths=True):
             if hasattr(item, 'rjust'):
                 item = [item]
             ans.extend(expand_file_list(item, is_paths=is_paths))
+        elif '*' in item:
+            ans.extend(expand_file_list(sorted(glob.glob(os.path.join(SRC, item))), is_paths=is_paths))
         else:
-            if '*' in item:
-                ans.extend(expand_file_list(sorted(glob.glob(os.path.join(SRC, item))), is_paths=is_paths))
-            else:
-                item = [item]
-                if is_paths:
-                    item = absolutize(item)
-                ans.extend(item)
+            item = [item]
+            if is_paths:
+                item = absolutize(item)
+            ans.extend(item)
     return ans
 
 
 def is_ext_allowed(ext):
-    only = ext.get('only', '')
-    if only:
+    if only := ext.get('only', ''):
         only = set(only.split())
-        q = set(filter(lambda x: globals()["is" + x], ["bsd", "freebsd", "haiku", "linux", "macos", "windows"]))
+        q = set(
+            filter(
+                lambda x: globals()[f"is{x}"],
+                ["bsd", "freebsd", "haiku", "linux", "macos", "windows"],
+            )
+        )
+
         return len(q.intersection(only)) > 0
     return True
 
@@ -129,17 +142,17 @@ def parse_extension(ext):
     def get(k, default=''):
         ans = ext.pop(k, default)
         if iswindows:
-            ans = ext.pop('windows_' + k, ans)
+            ans = ext.pop(f'windows_{k}', ans)
         elif ismacos:
-            ans = ext.pop('macos_' + k, ans)
+            ans = ext.pop(f'macos_{k}', ans)
         elif isbsd:
-            ans = ext.pop('bsd_' + k, ans)
+            ans = ext.pop(f'bsd_{k}', ans)
         elif isfreebsd:
-            ans = ext.pop('freebsd_' + k, ans)
+            ans = ext.pop(f'freebsd_{k}', ans)
         elif ishaiku:
-            ans = ext.pop('haiku_' + k, ans)
+            ans = ext.pop(f'haiku_{k}', ans)
         else:
-            ans = ext.pop('linux_' + k, ans)
+            ans = ext.pop(f'linux_{k}', ans)
         return ans
     for k in 'libraries qt_private ldflags cflags error'.split():
         kw[k] = expand_file_list(get(k).split(), is_paths=False)
@@ -161,7 +174,13 @@ def parse_extension(ext):
 def read_extensions():
     if hasattr(read_extensions, 'extensions'):
         return read_extensions.extensions
-    ans = read_extensions.extensions = json.load(open(os.path.dirname(os.path.abspath(__file__)) + '/extensions.json', 'rb'))
+    ans = read_extensions.extensions = json.load(
+        open(
+            f'{os.path.dirname(os.path.abspath(__file__))}/extensions.json',
+            'rb',
+        )
+    )
+
     return ans
 
 
@@ -200,24 +219,26 @@ def init_env(debug=False, sanitize=False):
         ldflags.append('-shared')
 
     if islinux or isbsd or ishaiku:
-        cflags.append('-I'+sysconfig.get_python_inc())
+        cflags.append(f'-I{sysconfig.get_python_inc()}')
         # getattr(..., 'abiflags') is for PY2 compat, since PY2 has no abiflags
         # member
-        ldflags.append('-lpython{}{}'.format(
-            sysconfig.get_config_var('VERSION'), getattr(sys, 'abiflags', '')))
+        ldflags.append(
+            f"-lpython{sysconfig.get_config_var('VERSION')}{getattr(sys, 'abiflags', '')}"
+        )
+
 
     if ismacos:
         cflags.append('-D_OSX')
         ldflags.extend('-bundle -undefined dynamic_lookup'.split())
         cflags.extend(['-fno-common', '-dynamic'])
-        cflags.append('-I'+sysconfig.get_python_inc())
+        cflags.append(f'-I{sysconfig.get_python_inc()}')
 
     if iswindows:
         cc = cxx = win_cc
         cflags = '/c /nologo /W3 /EHsc /utf-8'.split()
         cflags.append('/Zi' if debug else '/DNDEBUG')
         suffix = ('d' if debug else '')
-        cflags.append('/MD' + suffix)
+        cflags.append(f'/MD{suffix}')
         ldflags = f'/DLL /nologo /INCREMENTAL:NO /NODEFAULTLIB:libcmt{suffix}.lib'.split()
         if debug:
             ldflags.append('/DEBUG')
@@ -226,12 +247,11 @@ def init_env(debug=False, sanitize=False):
         if is64bit:
             cflags.append('/GS-')
 
-        for p in win_inc:
-            cflags.append('-I'+p)
+        cflags.extend(f'-I{p}' for p in win_inc)
         for p in win_lib:
             if p:
-                ldflags.append('/LIBPATH:'+p)
-        cflags.append('-I%s'%sysconfig.get_python_inc())
+                ldflags.append(f'/LIBPATH:{p}')
+        cflags.append(f'-I{sysconfig.get_python_inc()}')
         ldflags.append('/LIBPATH:'+os.path.join(sysconfig.PREFIX, 'libs'))
         linker = win_ld
     return namedtuple('Environment', 'cc cxx cflags ldflags linker make')(
@@ -292,14 +312,13 @@ class Build(Command):
             os.makedirs(x, exist_ok=True)
         pyqt_extensions, extensions = [], []
         for ext in all_extensions:
-            if opts.only != 'all' and opts.only != ext.name:
+            if opts.only not in ['all', ext.name]:
                 continue
             if ext.error:
-                if ext.optional:
-                    self.warn(ext.error)
-                    continue
-                else:
+                if not ext.optional:
                     raise Exception(ext.error)
+                self.warn(ext.error)
+                continue
             dest = self.dest(ext)
             os.makedirs(self.d(dest), exist_ok=True)
             (pyqt_extensions if ext.sip_files else extensions).append((ext, dest))
@@ -310,8 +329,7 @@ class Build(Command):
         for (ext, dest) in extensions:
             cmds, objects = self.get_compile_commands(ext, dest)
             objects_map[id(ext)] = objects
-            for cmd in cmds:
-                jobs.append(create_job(cmd.cmd))
+            jobs.extend(create_job(cmd.cmd) for cmd in cmds)
         if jobs:
             self.info(f'Compiling {len(jobs)} files...')
             if not parallel_build(jobs, self.info):
@@ -354,7 +372,7 @@ class Build(Command):
         return os.path.join(self.output_dir, getattr(ext, 'name', ext))+ex
 
     def inc_dirs_to_cflags(self, dirs):
-        return ['-I'+x for x in dirs]
+        return [f'-I{x}' for x in dirs]
 
     def lib_dirs_to_ldflags(self, dirs):
         pref = '/LIBPATH:' if iswindows else '-L'
@@ -374,12 +392,12 @@ class Build(Command):
         os.makedirs(obj_dir, exist_ok=True)
 
         for src in ext.sources:
-            obj = self.j(obj_dir, os.path.splitext(self.b(src))[0]+'.o')
+            obj = self.j(obj_dir, f'{os.path.splitext(self.b(src))[0]}.o')
             objects.append(obj)
             if self.newer(obj, [src]+ext.headers):
                 inf = '/Tp' if src.endswith('.cpp') or src.endswith('.cxx') else '/Tc'
                 sinc = [inf+src] if iswindows else ['-c', src]
-                oinc = ['/Fo'+obj] if iswindows else ['-o', obj]
+                oinc = [f'/Fo{obj}'] if iswindows else ['-o', obj]
                 cmd = [compiler] + self.env.cflags + ext.cflags + einc + sinc + oinc
                 ans.append(CompileCommand(cmd, src, obj))
         return ans, objects
@@ -393,12 +411,22 @@ class Build(Command):
         if self.newer(dest, objects+ext.extra_objs):
             cmd = [linker]
             if iswindows:
-                pre_ld_flags = []
-                if ext.name in ('icu', 'matcher'):
-                    # windows has its own ICU libs that dont work
-                    pre_ld_flags = elib
-                cmd += pre_ld_flags + self.env.ldflags + ext.ldflags + elib + xlib + \
-                    ['/EXPORT:' + init_symbol_name(ext.name)] + objects + ext.extra_objs + ['/OUT:'+dest]
+                pre_ld_flags = elib if ext.name in ('icu', 'matcher') else []
+                cmd += (
+                    (
+                        (
+                            pre_ld_flags
+                            + self.env.ldflags
+                            + ext.ldflags
+                            + elib
+                            + xlib
+                            + [f'/EXPORT:{init_symbol_name(ext.name)}']
+                        )
+                        + objects
+                    )
+                    + ext.extra_objs
+                ) + [f'/OUT:{dest}']
+
             else:
                 cmd += objects + ext.extra_objs + ['-o', dest] + self.env.ldflags + ext.ldflags + elib + xlib
             return LinkCommand(cmd, objects, dest)
@@ -526,7 +554,7 @@ sip-file = "{os.path.basename(sipf)}"
         src_dir = self.j(pyqt_dir, ext.name)
         # TODO: Handle building extensions with multiple SIP files.
         sipf = ext.sip_files[0]
-        sbf = self.j(src_dir, self.b(sipf)+'.sbf')
+        sbf = self.j(src_dir, f'{self.b(sipf)}.sbf')
         cmd = None
         cwd = None
         if self.newer(sbf, [sipf] + ext.headers + ext.sources):
@@ -563,7 +591,7 @@ sip-file = "{os.path.basename(sipf)}"
         extensions = map(parse_extension, filter(is_ext_allowed, read_extensions()))
         for ext in extensions:
             dest = self.dest(ext)
-            for x in (dest, dest+'.manifest'):
+            for x in (dest, f'{dest}.manifest'):
                 if os.path.exists(x):
                     os.remove(x)
         build_dir = self.DEFAULT_BUILDDIR

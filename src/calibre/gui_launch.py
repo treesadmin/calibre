@@ -18,10 +18,8 @@ is_detached = False
 
 def do_detach(fork=True, setsid=True, redirect=True):
     global is_detached
-    if fork:
-        # Detach from the controlling process.
-        if os.fork() != 0:
-            raise SystemExit(0)
+    if fork and os.fork() != 0:
+        raise SystemExit(0)
     if setsid:
         os.setsid()
     if redirect:

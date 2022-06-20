@@ -121,7 +121,7 @@ class DiscoverMagazine(BasicNewsRecipe):
                         desc = self.tag_to_string(p) if p is not None else ''
                         current_articles.append(
                             {'title': title, 'url': url, 'description': desc})
-                        self.log('\tArticle:', title, '[%s]' % url)
+                        self.log('\tArticle:', title, f'[{url}]')
                         self.log('\t\t', desc)
         if current_section and current_articles:
             feeds.append((current_section, current_articles))

@@ -55,8 +55,7 @@ class MalaysianMirror(BasicNewsRecipe):
 
 
         ]:
-            articles = self.make_links(url)
-            if articles:
+            if articles := self.make_links(url):
                 feeds.append((title, articles))
         return feeds
 
@@ -65,10 +64,7 @@ class MalaysianMirror(BasicNewsRecipe):
         current_articles = []
         soup = self.index_to_soup(url)
         for item in soup.findAll('div', attrs={'class': 'contentheading'}):
-            # print 'item is: ', item
-            link = item.find('a')
-            # print 'the link is: ', link
-            if link:
+            if link := item.find('a'):
                 url = self.INDEX + link['href']
                 title = self.tag_to_string(link)
                 # print 'the title is: ', title

@@ -63,7 +63,7 @@ class KleineZeitungRecipe(BasicNewsRecipe):
 
     def print_version(self, url):
         main, sep, id = url.rpartition('/')
-        return main + '/print.do'
+        return f'{main}/print.do'
 
     def preprocess_html(self, soup):
         if soup.find('div', {'class': 'articletext'}) is None:

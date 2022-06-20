@@ -43,12 +43,10 @@ class TheAge(BasicNewsRecipe):
                 section = self.tag_to_string(tag)
                 sections[section] = []
 
-            # Make sure to skip: <a href="/">TheAge</a>
-
             elif section and tag.get('href'):
                 url = tag['href'].strip()
                 if url.startswith('/'):
-                    url = 'http://www.theage.com.au' + url
+                    url = f'http://www.theage.com.au{url}'
                 title = self.tag_to_string(tag)
                 if url != 'http://www.theage.com.au':
                     sections[section].append({
@@ -59,16 +57,11 @@ class TheAge(BasicNewsRecipe):
                         'content': '',
                     })
 
-        feeds = []
-
         # Insert feeds in specified order, if available
 
         feedSort = ['National', 'World', 'Opinion',
                     'Columns', 'Business', 'Sport', 'Entertainment']
-        for i in feedSort:
-            if i in sections:
-                feeds.append((i, sections[i]))
-
+        feeds = [(i, sections[i]) for i in feedSort if i in sections]
         # Done with the sorted feeds
 
         for i in feedSort:
@@ -76,9 +69,7 @@ class TheAge(BasicNewsRecipe):
 
         # Append what is left over...
 
-        for i in sections:
-            feeds.append((i, sections[i]))
-
+        feeds.extend((i, value) for i, value in sections.items())
         return feeds
 
     def get_cover_url(self):

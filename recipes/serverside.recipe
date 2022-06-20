@@ -25,9 +25,7 @@ class Engadget(BasicNewsRecipe):
 
     def get_article_url(self, article):
 
-        url = article.get('guid', None)
-
-        return url
+        return article.get('guid', None)
 
     def print_version(self, url):
         return url.replace('http://www.theserverside.com/news/thread.tss?thread_id=', 'http://www.theserverside.com/common/printthread.tss?thread_id=')

@@ -33,19 +33,18 @@ def remove_dir(x):
 
 
 def determined_remove_dir(x):
-    for i in range(10):
+    for _ in range(10):
         try:
             import shutil
             shutil.rmtree(x)
             return
         except:
             import os  # noqa
-            if os.path.exists(x):
-                # In case some other program has one of the temp files open.
-                import time
-                time.sleep(0.1)
-            else:
+            if not os.path.exists(x):
                 return
+            # In case some other program has one of the temp files open.
+            import time
+            time.sleep(0.1)
     try:
         import shutil
         shutil.rmtree(x, ignore_errors=True)
@@ -55,8 +54,8 @@ def determined_remove_dir(x):
 
 def app_prefix(prefix):
     if iswindows:
-        return '%s_'%__appname__
-    return '%s_%s_%s'%(__appname__, __version__, prefix)
+        return f'{__appname__}_'
+    return f'{__appname__}_{__version__}_{prefix}'
 
 
 _osx_cache_dir = None
@@ -79,7 +78,7 @@ def osx_cache_dir():
                 pass
             if q and os.path.isdir(q) and os.access(q, os.R_OK | os.W_OK | os.X_OK):
                 _osx_cache_dir = q
-                return q
+                return _osx_cache_dir
 
 
 def base_dir():

@@ -52,7 +52,7 @@ class Veintitres(BasicNewsRecipe):
     def print_version(self, url):
         main, sep, article_part = url.partition('/nota-')
         article_id, rsep, rrest = article_part.partition('-')
-        return u'http://www.elargentino.com/Impresion.aspx?Id=' + article_id
+        return f'http://www.elargentino.com/Impresion.aspx?Id={article_id}'
 
     def preprocess_html(self, soup):
         for item in soup.findAll(style=True):
@@ -70,11 +70,10 @@ class Veintitres(BasicNewsRecipe):
     def get_cover_url(self):
         cover_url = None
         soup = self.index_to_soup(self.INDEX)
-        cover_item = soup.find('div', attrs={'class': 'colder'})
-        if cover_item:
+        if cover_item := soup.find('div', attrs={'class': 'colder'}):
             clean_url = self.image_url_processor(
                 None, cover_item.div.img['src'])
-            cover_url = 'http://www.elargentino.com' + clean_url + '&height=600'
+            cover_url = f'http://www.elargentino.com{clean_url}&height=600'
         return cover_url
 
     def image_url_processor(self, baseurl, url):

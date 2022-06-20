@@ -33,11 +33,10 @@ class GN(BasicNewsRecipe):
 
     def parse_index(self):
         self.last_issue = self.find_last_issue()
-        soup = self.index_to_soup('http://gosc.pl' + self.last_issue)
+        soup = self.index_to_soup(f'http://gosc.pl{self.last_issue}')
         self.cover_url = 'http://www.gosc.pl' + \
             soup.find('div', attrs={'class': 'fl-w100 release-wp'}
                       ).findAll('a')[-4].contents[0]['src']
-        feeds = []
         # editorial:
         a = soup.find('div', attrs={'class': 'release-wp-b'})
         art = a.find('a')
@@ -46,14 +45,13 @@ class GN(BasicNewsRecipe):
              'url': 'http://www.gosc.pl' + art['href'],
              'description': self.tag_to_string(a.find('p', attrs={'class': 'b lead'}))
              }]
-        feeds.append((u'Na dobry początek', articles))
+        feeds = [(u'Na dobry początek', articles)]
         # columns:
         for addr in soup.findAll('a', attrs={'href': re.compile('kategoria')}):
             if not addr.span:
                 main_block = self.index_to_soup(
                     'http://www.gosc.pl' + addr['href'])
-                articles = list(self.find_articles(main_block))
-                if len(articles) > 0:
+                if articles := list(self.find_articles(main_block)):
                     section = addr.contents[0]
                     feeds.append((section, articles))
         # not assigned content:
@@ -83,8 +81,7 @@ class GN(BasicNewsRecipe):
             }
 
     def append_page(self, soup, appendtag):
-        chpage = appendtag.find(attrs={'class': 'pgr_nrs'})
-        if chpage:
+        if chpage := appendtag.find(attrs={'class': 'pgr_nrs'}):
             for page in chpage.findAll('a'):
                 soup2 = self.index_to_soup('http://gosc.pl' + page['href'])
                 pagetext = soup2.find(attrs={'class': 'intextAd'})
@@ -93,8 +90,7 @@ class GN(BasicNewsRecipe):
 
     def preprocess_html(self, soup):
         self.append_page(soup, soup.body)
-        r = soup.find(attrs={'class': 'lightbox'})
-        if r:
+        if r := soup.find(attrs={'class': 'lightbox'}):
             r.contents[0]['src'] = r['href']
         return soup
 

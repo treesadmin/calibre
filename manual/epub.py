@@ -27,7 +27,7 @@ class EPUBHelpBuilder(EpubBuilder):
         else:
             EpubBuilder.build_epub(self)
             outdir = self.outdir
-            outname = self.config.epub_basename + '.epub'
+            outname = f'{self.config.epub_basename}.epub'
         container = get_container(os.path.join(outdir, outname))
         self.fix_epub(container)
         container.commit()
@@ -49,7 +49,7 @@ class EPUBHelpBuilder(EpubBuilder):
                 imgname = container.href_to_name(img.get('src'), name)
                 fmt, width, height = identify(container.raw_data(imgname))
                 if width == -1:
-                    raise ValueError('Failed to read size of: %s' % imgname)
+                    raise ValueError(f'Failed to read size of: {imgname}')
                 img.set('style', 'width: %dpx; height: %dpx' % (width, height))
 
     def fix_opf(self, container):
@@ -74,8 +74,8 @@ class EPUBHelpBuilder(EpubBuilder):
             guide.getparent().remove(guide)
 
         # Ensure that the cover-image property is set
-        cover_id = rmap['_static/' + self.config.epub_cover[0]]
-        for item in container.opf_xpath('//opf:item[@id="{}"]'.format(cover_id)):
+        cover_id = rmap[f'_static/{self.config.epub_cover[0]}']
+        for item in container.opf_xpath(f'//opf:item[@id="{cover_id}"]'):
             item.set('properties', 'cover-image')
         for item in container.opf_xpath('//opf:item[@href="epub-cover.xhtml"]'):
             item.set('properties', 'svg calibre:title-page')
@@ -83,7 +83,7 @@ class EPUBHelpBuilder(EpubBuilder):
             prefix = item.get('prefix') or ''
             if prefix:
                 prefix += ' '
-            item.set('prefix', prefix + 'calibre: https://calibre-ebook.com')
+            item.set('prefix', f'{prefix}calibre: https://calibre-ebook.com')
 
         # Remove any <meta cover> tag as it is not needed in epub 3
         for meta in container.opf_xpath('//opf:meta[@name="cover"]'):

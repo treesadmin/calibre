@@ -31,7 +31,7 @@ class brewiarz(BasicNewsRecipe):
         now = datetime.datetime.now()
 
         feeds = []
-        for i in range(0, self.next_days):
+        for i in range(self.next_days):
             url_date = now + datetime.timedelta(days=i)
             url_date_month = url_date.strftime("%m")
             url_date_month_roman = dec2rom_dict[url_date_month]
@@ -40,24 +40,63 @@ class brewiarz(BasicNewsRecipe):
             url_date_weekday = url_date.strftime("%A")
             url_date_weekday_pl = weekday_dict[url_date_weekday]
 
-            url = "http://brewiarz.pl/" + url_date_month_roman + "_" + \
-                url_date_year + "/" + url_date_day + url_date_month + "/index.php3"
-            articles = self.parse_pages(url)
-            if articles:
-                title = url_date_weekday_pl + " " + url_date_day + \
-                    "." + url_date_month + "." + url_date_year
+            url = (
+                (
+                    (
+                        (
+                            f"http://brewiarz.pl/{url_date_month_roman}_"
+                            + url_date_year
+                        )
+                        + "/"
+                    )
+                    + url_date_day
+                )
+                + url_date_month
+            ) + "/index.php3"
+
+            if articles := self.parse_pages(url):
+                title = (
+                    (
+                        (f"{url_date_weekday_pl} {url_date_day}" + ".")
+                        + url_date_month
+                    )
+                    + "."
+                ) + url_date_year
+
                 feeds.append((title, articles))
             else:
                 sectors = self.get_sectors(url)
                 for subpage in sectors:
-                    title = url_date_weekday_pl + " " + url_date_day + "." + \
-                        url_date_month + "." + url_date_year + " - " + subpage.string
-                    url = "http://brewiarz.pl/" + url_date_month_roman + "_" + url_date_year + \
-                        "/" + url_date_day + url_date_month + \
-                        "/" + subpage['href']
+                    title = (
+                        (
+                            (
+                                (
+                                    f"{url_date_weekday_pl} {url_date_day}."
+                                    + url_date_month
+                                )
+                                + "."
+                            )
+                            + url_date_year
+                        )
+                        + " - "
+                    ) + subpage.string
+
+                    url = (
+                        (
+                            (
+                                (
+                                    f"http://brewiarz.pl/{url_date_month_roman}_{url_date_year}"
+                                    + "/"
+                                )
+                                + url_date_day
+                            )
+                            + url_date_month
+                        )
+                        + "/"
+                    ) + subpage['href']
+
                     print(url)
-                    articles = self.parse_pages(url)
-                    if articles:
+                    if articles := self.parse_pages(url):
                         feeds.append((title, articles))
         return feeds
 
@@ -67,47 +106,41 @@ class brewiarz(BasicNewsRecipe):
         sectors_table = soup.find(name='table', attrs={'width': '490'})
         sector_links = sectors_table.findAll(name='a')
         for sector_links_modified in sector_links:
-            link_parent_text = sector_links_modified.findParent(
-                name='div').text
-            if link_parent_text:
+            if link_parent_text := sector_links_modified.findParent(
+                name='div'
+            ).text:
                 sector_links_modified.text = link_parent_text.text
             sectors.append(sector_links_modified)
         return sectors
 
     def parse_pages(self, url):
-        current_articles = []
         soup = self.index_to_soup(url)
-        www = soup.find(attrs={'class': 'www'})
-        if www:
-            box_title = www.find(text='Teksty LG')
-            article_box_parent = box_title.findParent('ul')
-            article_box_sibling = article_box_parent.findNextSibling('ul')
-            for li in article_box_sibling.findAll('li'):
-                link = li.find(name='a')
-                ol = link.findNextSibling(name='ol')
-                if ol:
-                    sublinks = ol.findAll(name='a')
-                    for sublink in sublinks:
-                        link_title = self.tag_to_string(
-                            link) + " - " + self.tag_to_string(sublink)
-                        link_url_print = re.sub(
-                            'php3', 'php3?kr=_druk&wr=lg&', sublink['href'])
-                        link_url = url[:-10] + link_url_print
-                        current_articles.append({'title': link_title,
-                                                 'url': link_url, 'description': '', 'date': ''})
-                else:
-                    if link.findParent(name='ol'):
-                        continue
-                    else:
-                        link_title = self.tag_to_string(link)
-                        link_url_print = re.sub(
-                            'php3', 'php3?kr=_druk&wr=lg&', link['href'])
-                        link_url = url[:-10] + link_url_print
-                        current_articles.append({'title': link_title,
-                                                 'url': link_url, 'description': '', 'date': ''})
-            return current_articles
-        else:
+        if not (www := soup.find(attrs={'class': 'www'})):
             return None
+        box_title = www.find(text='Teksty LG')
+        article_box_parent = box_title.findParent('ul')
+        article_box_sibling = article_box_parent.findNextSibling('ul')
+        current_articles = []
+        for li in article_box_sibling.findAll('li'):
+            link = li.find(name='a')
+            if ol := link.findNextSibling(name='ol'):
+                sublinks = ol.findAll(name='a')
+                for sublink in sublinks:
+                    link_title = self.tag_to_string(
+                        link) + " - " + self.tag_to_string(sublink)
+                    link_url_print = re.sub(
+                        'php3', 'php3?kr=_druk&wr=lg&', sublink['href'])
+                    link_url = url[:-10] + link_url_print
+                    current_articles.append({'title': link_title,
+                                             'url': link_url, 'description': '', 'date': ''})
+            elif not link.findParent(name='ol'):
+                link_title = self.tag_to_string(link)
+                link_url_print = re.sub(
+                    'php3', 'php3?kr=_druk&wr=lg&', link['href'])
+                link_url = url[:-10] + link_url_print
+                current_articles.append({'title': link_title,
+                                         'url': link_url, 'description': '', 'date': ''})
+        return current_articles
 
     def preprocess_html(self, soup):
         footer = soup.find(name='a', attrs={'href': 'http://brewiarz.pl'})

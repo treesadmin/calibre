@@ -60,15 +60,13 @@ class ScienceNewsIssue(BasicNewsRecipe):
     ]
 
     def get_cover_url(self):
-        cover_url = None
         index = 'http://www.sciencenews.org/view/home'
         soup = self.index_to_soup(index)
-        link_item = soup.find(name='img', alt="issue")
-        if link_item:
-            cover_url = 'http://www.sciencenews.org' + \
-                link_item['src'] + '.jpg'
-
-        return cover_url
+        return (
+            'http://www.sciencenews.org' + link_item['src'] + '.jpg'
+            if (link_item := soup.find(name='img', alt="issue"))
+            else None
+        )
 
     def preprocess_html(self, soup):
         for tag in soup.findAll(name=['span']):

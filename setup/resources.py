@@ -16,10 +16,8 @@ from polyglot.builtins import codepoint_to_chr, itervalues, iteritems, only_unic
 
 def get_opts_from_parser(parser):
     def do_opt(opt):
-        for x in opt._long_opts:
-            yield x
-        for x in opt._short_opts:
-            yield x
+        yield from opt._long_opts
+        yield from opt._short_opts
     for o in parser.option_list:
         for x in do_opt(o):
             yield x
@@ -124,9 +122,7 @@ class Kakasi(Command):  # {{{
     def kanwaout(self, out):
         from calibre.utils.serialize import msgpack_dumps
         with open(out, 'wb') as f:
-            dic = {}
-            for k, v in iteritems(self.records):
-                dic[k] = compress(msgpack_dumps(v))
+            dic = {k: compress(msgpack_dumps(v)) for k, v in iteritems(self.records)}
             f.write(msgpack_dumps(dic))
 
     def clean(self):
@@ -188,7 +184,7 @@ class RapydScript(Command):  # {{{
     def run(self, opts):
         from calibre.utils.rapydscript import compile_srv, compile_editor, compile_viewer
         if opts.only_module:
-            locals()['compile_' + opts.only_module]()
+            locals()[f'compile_{opts.only_module}']()
         else:
             compile_editor()
             compile_viewer()
@@ -230,7 +226,7 @@ class Resources(Command):  # {{{
 
         recipe_icon_dir = self.a(self.j(self.RESOURCES, '..', 'recipes',
             'icons'))
-        dest = os.path.splitext(dest)[0] + '.zip'
+        dest = f'{os.path.splitext(dest)[0]}.zip'
         files += glob.glob(self.j(recipe_icon_dir, '*.png'))
         if self.newer(dest, files):
             self.info('\tCreating builtin_recipes.zip')
@@ -242,17 +238,16 @@ class Resources(Command):  # {{{
         dest = self.j(self.RESOURCES, 'ebook-convert-complete.calibre_msgpack')
         files = []
         for x in os.walk(self.j(self.SRC, 'calibre')):
-            for f in x[-1]:
-                if f.endswith('.py'):
-                    files.append(self.j(x[0], f))
+            files.extend(self.j(x[0], f) for f in x[-1] if f.endswith('.py'))
         if self.newer(dest, files):
             self.info('\tCreating ' + self.b(dest))
-            complete = {}
             from calibre.ebooks.conversion.plumber import supported_input_formats
-            complete['input_fmts'] = set(supported_input_formats())
+            complete = {'input_fmts': set(supported_input_formats())}
             from calibre.web.feeds.recipes.collection import get_builtin_recipe_titles
-            complete['input_recipes'] = [t+'.recipe ' for t in
-                    get_builtin_recipe_titles()]
+            complete['input_recipes'] = [
+                f'{t}.recipe ' for t in get_builtin_recipe_titles()
+            ]
+
             from calibre.customize.ui import available_output_formats
             complete['output'] = set(available_output_formats())
             from calibre.ebooks.conversion.cli import create_option_parser
@@ -263,11 +258,12 @@ class Resources(Command):  # {{{
                 if inf in ('zip', 'rar', 'oebzip'):
                     continue
                 for ouf in available_output_formats():
-                    of = ouf if ouf == 'oeb' else 'dummy.'+ouf
-                    p = create_option_parser(('ec', 'dummy1.'+inf, of, '-h'),
-                            log)[0]
-                    complete[(inf, ouf)] = [x+' 'for x in
-                            get_opts_from_parser(p)]
+                    of = ouf if ouf == 'oeb' else f'dummy.{ouf}'
+                    p = create_option_parser(('ec', f'dummy1.{inf}', of, '-h'), log)[0]
+                    complete[(inf, ouf)] = [
+                        f'{x} ' for x in get_opts_from_parser(p)
+                    ]
+
 
             with open(dest, 'wb') as f:
                 f.write(msgpack_dumps(only_unicode_recursive(complete)))
@@ -297,9 +293,10 @@ class Resources(Command):  # {{{
                 src = ''.join(inspect.getsourcelines(func)[0][1:])
             except Exception:
                 continue
-            src = src.replace('def ' + func.__name__, 'def replace')
-            imports = ['from %s import %s' % (x.__module__, x.__name__) for x in func.imports]
-            if imports:
+            src = src.replace(f'def {func.__name__}', 'def replace')
+            if imports := [
+                f'from {x.__module__} import {x.__name__}' for x in func.imports
+            ]:
                 src = '\n'.join(imports) + '\n\n' + src
             function_dict[func.name] = src
         dump_json(function_dict, dest)
@@ -320,7 +317,7 @@ class Resources(Command):  # {{{
 
     def clean(self):
         for x in ('scripts', 'ebook-convert-complete'):
-            x = self.j(self.RESOURCES, x+'.pickle')
+            x = self.j(self.RESOURCES, f'{x}.pickle')
             if os.path.exists(x):
                 os.remove(x)
         from setup.commands import kakasi

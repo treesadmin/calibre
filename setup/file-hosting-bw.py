@@ -15,7 +15,7 @@ def main():
     os.chdir(BASE)
 
     for name in 'hours days months top10 summary'.split():
-        subprocess.check_call(['vnstati', '--' + name, '-o', name + '.png'])
+        subprocess.check_call(['vnstati', f'--{name}', '-o', f'{name}.png'])
 
     html = '''\
     <!DOCTYPE html>

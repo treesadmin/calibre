@@ -4,6 +4,7 @@
 
 ''' Post installation script for linux '''
 
+
 import sys, os, textwrap, stat, errno
 from subprocess import check_call, check_output
 from functools import partial
@@ -17,31 +18,31 @@ from polyglot.builtins import iteritems, unicode_type
 
 
 entry_points = {
-        'console_scripts': [
-             'ebook-device         = calibre.devices.cli:main',
-             'ebook-meta           = calibre.ebooks.metadata.cli:main',
-             'ebook-convert        = calibre.ebooks.conversion.cli:main',
-             'ebook-polish         = calibre.ebooks.oeb.polish.main:main',
-             'markdown-calibre     = markdown.__main__:run',
-             'web2disk             = calibre.web.fetch.simple:main',
-             'calibre-server       = calibre.srv.standalone:main',
-             'lrf2lrs              = calibre.ebooks.lrf.lrfparser:main',
-             'lrs2lrf              = calibre.ebooks.lrf.lrs.convert_from:main',
-             'calibre-debug        = calibre.debug:main',
-             'calibredb            = calibre.db.cli.main:main',
-             'calibre-parallel     = calibre.utils.ipc.worker:main',
-             'calibre-customize    = calibre.customize.ui:main',
-             'calibre-complete     = calibre.utils.complete:main',
-             'fetch-ebook-metadata = calibre.ebooks.metadata.sources.cli:main',
-             'calibre-smtp         = calibre.utils.smtp:main',
-        ],
-        'gui_scripts' : [
-            __appname__+' = calibre.gui_launch:calibre',
-            'lrfviewer    = calibre.gui2.lrf_renderer.main:main',
-            'ebook-viewer = calibre.gui_launch:ebook_viewer',
-            'ebook-edit   = calibre.gui_launch:ebook_edit',
-        ],
-      }
+    'console_scripts': [
+        'ebook-device         = calibre.devices.cli:main',
+        'ebook-meta           = calibre.ebooks.metadata.cli:main',
+        'ebook-convert        = calibre.ebooks.conversion.cli:main',
+        'ebook-polish         = calibre.ebooks.oeb.polish.main:main',
+        'markdown-calibre     = markdown.__main__:run',
+        'web2disk             = calibre.web.fetch.simple:main',
+        'calibre-server       = calibre.srv.standalone:main',
+        'lrf2lrs              = calibre.ebooks.lrf.lrfparser:main',
+        'lrs2lrf              = calibre.ebooks.lrf.lrs.convert_from:main',
+        'calibre-debug        = calibre.debug:main',
+        'calibredb            = calibre.db.cli.main:main',
+        'calibre-parallel     = calibre.utils.ipc.worker:main',
+        'calibre-customize    = calibre.customize.ui:main',
+        'calibre-complete     = calibre.utils.complete:main',
+        'fetch-ebook-metadata = calibre.ebooks.metadata.sources.cli:main',
+        'calibre-smtp         = calibre.utils.smtp:main',
+    ],
+    'gui_scripts': [
+        f'{__appname__} = calibre.gui_launch:calibre',
+        'lrfviewer    = calibre.gui2.lrf_renderer.main:main',
+        'ebook-viewer = calibre.gui_launch:ebook_viewer',
+        'ebook-edit   = calibre.gui_launch:ebook_edit',
+    ],
+}
 
 
 def polyglot_write(stream):
@@ -266,8 +267,8 @@ class ZshCompleter(object):  # {{{
         for opt in options:
             lo, so = opt._long_opts, opt._short_opts
             if opt.takes_value():
-                lo = [x+'=' for x in lo]
-                so = [x+'+' for x in so]
+                lo = [f'{x}=' for x in lo]
+                so = [f'{x}+' for x in so]
             ostrings = lo + so
             ostrings = '{%s}'%','.join(ostrings) if len(ostrings) > 1 else ostrings[0]
             exclude = ''
@@ -283,13 +284,15 @@ class ZshCompleter(object):  # {{{
                 if opt.dest in {'extract_to', 'debug_pipeline', 'to_dir', 'outbox', 'with_library', 'library_path'}:
                     arg += "'_path_files -/'"
                 elif opt.choices:
-                    arg += "(%s)"%'|'.join(opt.choices)
+                    arg += f"({'|'.join(opt.choices)})"
                 elif set(file_map).intersection(set(opt._long_opts)):
                     k = set(file_map).intersection(set(opt._long_opts))
-                    exts = file_map[tuple(k)[0]]
-                    if exts:
-                        arg += "'_files -g \"%s\"'"%(' '.join('*.%s'%x for x in
-                                tuple(exts) + tuple(x.upper() for x in exts)))
+                    if exts := file_map[tuple(k)[0]]:
+                        arg += "'_files -g \"%s\"'" % ' '.join(
+                            f'*.{x}'
+                            for x in tuple(exts) + tuple(x.upper() for x in exts)
+                        )
+
                     else:
                         arg += "_files"
                 elif (opt.dest in {'pidfile', 'attachment'}):
@@ -297,11 +300,14 @@ class ZshCompleter(object):  # {{{
                 elif set(opf_opts).intersection(set(opt._long_opts)):
                     arg += "'_files -g \"*.opf\"'"
                 elif set(cover_opts).intersection(set(opt._long_opts)):
-                    arg += "'_files -g \"%s\"'"%(' '.join('*.%s'%x for x in
-                                tuple(pics) + tuple(x.upper() for x in pics)))
+                    arg += "'_files -g \"%s\"'" % ' '.join(
+                        f'*.{x}'
+                        for x in tuple(pics) + tuple(x.upper() for x in pics)
+                    )
+
 
             help_txt = '"[%s]"'%h
-            yield '%s%s%s%s '%(exclude, ostrings, help_txt, arg)
+            yield f'{exclude}{ostrings}{help_txt}{arg} '
 
     def opts_and_exts(self, name, op, exts, cover_opts=('--cover',),
                       opf_opts=('--opf',), file_map={}):
@@ -359,8 +365,8 @@ class ZshCompleter(object):  # {{{
         log = DevNull()
 
         def get_parser(input_fmt='epub', output_fmt=None):
-            of = ('dummy2.'+output_fmt) if output_fmt else 'dummy'
-            return create_option_parser(('ec', 'dummy1.'+input_fmt, of, '-h'), log)[0]
+            of = f'dummy2.{output_fmt}' if output_fmt else 'dummy'
+            return create_option_parser(('ec', f'dummy1.{input_fmt}', of, '-h'), log)[0]
 
         # Common options
         input_group, output_group = group_titles()
@@ -427,8 +433,8 @@ class ZshCompleter(object):  # {{{
         for opt in parser.option_list:
             lo, so = opt._long_opts, opt._short_opts
             if opt.takes_value():
-                lo = [x+'=' for x in lo]
-                so = [x+'+' for x in so]
+                lo = [f'{x}=' for x in lo]
+                so = [f'{x}+' for x in so]
             ostrings = lo + so
             ostrings = '{%s}'%','.join(ostrings) if len(ostrings) > 1 else '"%s"'%ostrings[0]
             h = opt.help or ''
@@ -496,17 +502,14 @@ _ebook_edit() {
             elif command == 'set_metadata':
                 exts = ['opf']
             exts = set(exts).union(x.upper() for x in exts)
-            pats = ('*.%s'%x for x in exts)
+            pats = (f'*.{x}' for x in exts)
             extra = ("'*:filename:_files -g \"%s\"' "%' '.join(pats),) if exts else ()
             if command in {'add', 'add_format'}:
                 extra = ("'*:filename:_files' ",)
             opts = '\\\n        '.join(tuple(self.get_options(
                 parser)) + extra)
             txt = '  _arguments -s \\\n        ' + opts
-            subcommands.append('(%s)'%command)
-            subcommands.append(txt)
-            subcommands.append(';;')
-
+            subcommands.extend((f'({command})', txt, ';;'))
         w('\n_calibredb() {')
         w((
             r'''
@@ -553,19 +556,18 @@ _ebook_edit() {
 
 
 def get_bash_completion_path(root, share, info):
-    if root == '/usr':
-        # Try to get the system bash completion dir since we are installing to
-        # /usr
-        try:
-            path = check_output('pkg-config --variable=completionsdir bash-completion'.split()).decode('utf-8').strip().partition(os.pathsep)[0]
-        except Exception:
-            info('Failed to find directory to install bash completions, using default.')
-            path = '/usr/share/bash-completion/completions'
-        if path and os.path.exists(path) and os.path.isdir(path):
-            return path
-    else:
+    if root != '/usr':
         # Use the default bash-completion dir under staging_share
         return os.path.join(share, 'bash-completion', 'completions')
+    # Try to get the system bash completion dir since we are installing to
+    # /usr
+    try:
+        path = check_output('pkg-config --variable=completionsdir bash-completion'.split()).decode('utf-8').strip().partition(os.pathsep)[0]
+    except Exception:
+        info('Failed to find directory to install bash completions, using default.')
+        path = '/usr/share/bash-completion/completions'
+    if path and os.path.exists(path) and os.path.isdir(path):
+        return path
 
 
 def write_completion(self, bash_comp_dest, zsh):
@@ -841,10 +843,6 @@ class PostInstall:
             if self.opts.fatal_errors:
                 raise
             self.task_failed('Setting up completion failed')
-        except:
-            if self.opts.fatal_errors:
-                raise
-            self.task_failed('Setting up completion failed')
     # }}}
 
     def setup_desktop_integration(self):  # {{{
@@ -862,7 +860,7 @@ class PostInstall:
         if getattr(sys, 'frozen_path', False) and 'LD_LIBRARY_PATH' in env:
             paths = env.get('LD_LIBRARY_PATH', '').split(os.pathsep)
             paths = [x for x in paths if x]
-            npaths = [x for x in paths if x != sys.frozen_path+'/lib']
+            npaths = [x for x in paths if x != f'{sys.frozen_path}/lib']
             env['LD_LIBRARY_PATH'] = os.pathsep.join(npaths)
             cc = partial(check_call, env=env)
 
@@ -877,7 +875,7 @@ class PostInstall:
     def install_xdg_junk(self, cc, env):
 
         def install_single_icon(iconsrc, basename, size, context, is_last_icon=False):
-            filename = '%s-%s.png' % (basename, size)
+            filename = f'{basename}-{size}.png'
             render_img(iconsrc, filename, width=int(size), height=int(size))
             cmd = ['xdg-icon-resource', 'install', '--noupdate', '--context', context, '--size', unicode_type(size), filename, basename]
             if is_last_icon:
@@ -913,9 +911,9 @@ class PostInstall:
         mimetypes.discard('application/octet-stream')
 
         def write_mimetypes(f, extra=''):
-            line = 'MimeType={};'.format(';'.join(mimetypes))
+            line = f"MimeType={';'.join(mimetypes)};"
             if extra:
-                line += extra + ';'
+                line += f'{extra};'
             f.write(line.encode('utf-8') + b'\n')
 
         from calibre.ebooks.oeb.polish.main import SUPPORTED
@@ -999,8 +997,14 @@ def opts_and_words(name, op, words, takes_files=False):
     opts  = '|'.join(options(op))
     words = '|'.join([w.replace("'", "\\'") for w in words])
     fname = name.replace('-', '_')
-    return ('_'+fname+'()'+
-'''
+    return (
+        (
+            (
+                (
+                    (
+                        (
+                            f'_{fname}()'
+                            + '''
 {
     local cur opts
     local IFS=$'|\\t'
@@ -1023,7 +1027,18 @@ def opts_and_words(name, op, words, takes_files=False):
     esac
 
 }
-complete -F _'''%(opts, words) + fname + ' ' + name +"\n\n").encode('utf-8')
+complete -F _'''
+                            % (opts, words)
+                        )
+                        + fname
+                    )
+                    + ' '
+                )
+                + name
+            )
+            + "\n\n"
+        )
+    ).encode('utf-8')
 
 
 pics = {'jpg', 'jpeg', 'gif', 'png', 'bmp'}
@@ -1046,12 +1061,17 @@ def opts_and_exts(name, op, exts, cover_opts=('--cover',), opf_opts=(),
     '''
     extras = []
     for eopts, eexts in ((cover_opts, "${pics}"), (opf_opts, "'@(opf)'")):
-        for opt in eopts:
-            extras.append(special_exts_template%(opt, eexts))
+        extras.extend(special_exts_template%(opt, eexts) for opt in eopts)
     extras = '\n'.join(extras)
 
-    return ('_'+fname+'()'+
-'''
+    return (
+        (
+            (
+                (
+                    (
+                        (
+                            f'_{fname}()'
+                            + '''
 {
     local cur prev opts
     COMPREPLY=()
@@ -1077,8 +1097,20 @@ def opts_and_exts(name, op, exts, cover_opts=('--cover',), opf_opts=(),
     esac
 
 }
-complete -o filenames -F _'''%dict(pics=spics,
-    opts=opts, extras=extras, exts=exts) + fname + ' ' + name +"\n\n").encode('utf-8')
+complete -o filenames -F _'''
+                            % dict(
+                                pics=spics, opts=opts, extras=extras, exts=exts
+                            )
+                        )
+                        + fname
+                    )
+                    + ' '
+                )
+                + name
+            )
+            + "\n\n"
+        )
+    ).encode('utf-8')
 
 
 VIEWER = '''\
@@ -1249,7 +1281,7 @@ def make_appdata_releases():
 def write_appdata(key, entry, base, translators):
     from lxml.etree import tostring
     from lxml.builder import E
-    fpath = os.path.join(base, '%s.metainfo.xml' % key)
+    fpath = os.path.join(base, f'{key}.metainfo.xml')
     screenshots = E.screenshots()
     for w, h, url in entry['screenshots']:
         s = E.screenshot(E.image(url, width=unicode_type(w), height=unicode_type(h)))
@@ -1264,7 +1296,7 @@ def write_appdata(key, entry, base, translators):
                 description.append(E.p(tp, **{'{http://www.w3.org/XML/1998/namespace}lang': lang}))
 
     root = E.component(
-        E.id(key + '.desktop'),
+        E.id(f'{key}.desktop'),
         E.name(entry['name']),
         E.metadata_license('CC0-1.0'),
         E.project_license('GPL-3.0'),
@@ -1275,14 +1307,15 @@ def write_appdata(key, entry, base, translators):
             E.content_attribute('mild', id='social-info'),
             # In-App Purchases: Users are encouraged to donate real money, e.g. using Patreon
             E.content_attribute('mild', id='money-purchasing'),
-            type='oars-1.1'
+            type='oars-1.1',
         ),
         description,
         E.url('https://calibre-ebook.com/', type='homepage'),
         screenshots,
         E.launchable(entry['desktop-id'], type='desktop-id'),
-        type='desktop-application'
+        type='desktop-application',
     )
+
     for lang, t in iteritems(translators):
         tp = t.gettext(entry['summary'])
         if tp != entry['summary']:

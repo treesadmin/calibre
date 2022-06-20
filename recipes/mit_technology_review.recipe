@@ -13,9 +13,9 @@ import re
 
 def absurl(x):
     if x.startswith('//'):
-        x = 'http:' + x
+        x = f'http:{x}'
     elif not x.startswith('http'):
-        x = "http://www.technologyreview.com" + x
+        x = f"http://www.technologyreview.com{x}"
     return x
 
 
@@ -77,7 +77,7 @@ class MitTechnologyReview(BasicNewsRecipe):
             href = absurl(a['href'])
             if href and title:
                 current_articles.append({'title': title, 'url': href})
-                self.log(title, '[%s]' % href)
+                self.log(title, f'[{href}]')
         return [('Articles', current_articles)]
 
     def preprocess_html(self, soup):

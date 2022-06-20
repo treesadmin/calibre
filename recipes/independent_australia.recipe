@@ -89,7 +89,7 @@ class IndependentAustralia(BasicNewsRecipe):
         # Loop thru the articles in all feeds to find articles with base categories in it
         for curfeed in feeds:
             delList = []
-            for a, curarticle in enumerate(curfeed.articles):
+            for curarticle in curfeed.articles:
                 if curarticle.url.lower(
                 ).find('independentaustralia.net/politics/') >= 0:
                     politicsArticles.append(curarticle)
@@ -110,13 +110,13 @@ class IndependentAustralia(BasicNewsRecipe):
                 ).find('independentaustralia.net/australia/') >= 0:
                     australiaArticles.append(curarticle)
                     delList.append(curarticle)
-            if len(delList) > 0:
+            if delList:
                 for d in delList:
                     index = curfeed.articles.index(d)
                     curfeed.articles[index:index + 1] = []
 
         # If there are any of each base category found, create, append a new Feed object
-        if len(politicsArticles) > 0:
+        if politicsArticles:
             pfeed = Feed()
             pfeed.title = 'Politics'
             pfeed.image_url = None
@@ -125,7 +125,7 @@ class IndependentAustralia(BasicNewsRecipe):
             # Create a new Feed, add the articles, and append to "official" list of feeds
             pfeed.articles = politicsArticles[:]
             feeds.append(pfeed)
-        if len(environmentArticles) > 0:
+        if environmentArticles:
             pfeed = Feed()
             pfeed.title = 'Environment'
             pfeed.image_url = None
@@ -134,7 +134,7 @@ class IndependentAustralia(BasicNewsRecipe):
             # Create a new Feed, add the articles, and append to "official" list of feeds
             pfeed.articles = environmentArticles[:]
             feeds.append(pfeed)
-        if len(businessArticles) > 0:
+        if businessArticles:
             pfeed = Feed()
             pfeed.title = 'Business'
             pfeed.image_url = None
@@ -143,7 +143,7 @@ class IndependentAustralia(BasicNewsRecipe):
             # Create a new Feed, add the articles, and append to "official" list of feeds
             pfeed.articles = businessArticles[:]
             feeds.append(pfeed)
-        if len(lifeArticles) > 0:
+        if lifeArticles:
             pfeed = Feed()
             pfeed.title = 'Life'
             pfeed.image_url = None
@@ -152,7 +152,7 @@ class IndependentAustralia(BasicNewsRecipe):
             # Create a new Feed, add the articles, and append to "official" list of feeds
             pfeed.articles = lifeArticles[:]
             feeds.append(pfeed)
-        if len(australiaArticles) > 0:
+        if australiaArticles:
             pfeed = Feed()
             pfeed.title = 'Australia'
             pfeed.image_url = None
@@ -162,7 +162,6 @@ class IndependentAustralia(BasicNewsRecipe):
             pfeed.articles = australiaArticles[:]
             feeds.append(pfeed)
 
-        if len(feeds) > 1:  # cleanup empty first feed item
-            if len(feeds[0]) == 0:
-                del feeds[0]
+        if len(feeds) > 1 and len(feeds[0]) == 0:
+            del feeds[0]
         return feeds

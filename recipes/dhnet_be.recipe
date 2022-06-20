@@ -43,6 +43,6 @@ class DHNetBe(BasicNewsRecipe):
         return soup
 
     def get_cover_url(self):
-        cover_url = strftime(
-            'http://pdf-online.dhnet.be/pdfonline/image/%Y%m%d/dh_%Y%m%d_nam_infoge_001.pdf.L.jpg')
-        return cover_url
+        return strftime(
+            'http://pdf-online.dhnet.be/pdfonline/image/%Y%m%d/dh_%Y%m%d_nam_infoge_001.pdf.L.jpg'
+        )

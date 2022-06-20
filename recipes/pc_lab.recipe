@@ -52,7 +52,7 @@ class PCLab(BasicNewsRecipe):
             # search for 'a' element with link to next page (exit if not found)
             a = pager.find('a')
             nexturl = a['href']
-            soup2 = self.index_to_soup('http://pclab.pl' + nexturl)
+            soup2 = self.index_to_soup(f'http://pclab.pl{nexturl}')
             pager = soup2.find('div', attrs={'class': 'next'})
             pagetext = soup2.find('div', attrs={'class': 'substance'})
             pagetext = pagetext.find('div', attrs={'class': 'data'})
@@ -65,8 +65,7 @@ class PCLab(BasicNewsRecipe):
             appendtag.insert(pos, pagetext)
             pos = len(appendtag.contents)
 
-        pager = soup.find('div', attrs={'class': 'navigation'})
-        if pager:
+        if pager := soup.find('div', attrs={'class': 'navigation'}):
             pager.extract()
 
     def preprocess_html(self, soup):
@@ -75,7 +74,7 @@ class PCLab(BasicNewsRecipe):
         for link in soup.findAll('a'):
             href = link.get('href', None)
             if href and href.startswith('/'):
-                link['href'] = 'http://pclab.pl' + href
+                link['href'] = f'http://pclab.pl{href}'
         for r in soup.findAll(name='a', href=re.compile(r'^https://www.skapiec.pl/')):
             r.extract()
 

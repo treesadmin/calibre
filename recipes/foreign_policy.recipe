@@ -57,8 +57,7 @@ class ForeignPolicy(BasicNewsRecipe):
                 amap.setdefault(current_section, []).append({'title': title, 'url': url})
         ans = []
         for sec_name in sorted(amap, key=lambda x: x.lower()):
-            articles = amap[sec_name]
-            if articles:
+            if articles := amap[sec_name]:
                 ans.append((sec_name, articles))
         return ans
 

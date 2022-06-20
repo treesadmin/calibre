@@ -34,7 +34,7 @@ def classes(classes):
 
 def absurl(url):
     if url.startswith('/'):
-        url = 'https://www.latimes.com' + url
+        url = f'https://www.latimes.com{url}'
     return url
 
 

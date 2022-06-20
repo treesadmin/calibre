@@ -64,15 +64,15 @@ def solve_captcha(captcha):
     if calculationParts is None:
         return 0
 
-    operator = calculationParts.group('operator')
+    operator = calculationParts['operator']
 
-    result = calculationParts.group('result')
+    result = calculationParts['result']
     result = int(result) if result is not None else None
 
-    component_one = calculationParts.group('first_component')
+    component_one = calculationParts['first_component']
     component_one = int(component_one) if component_one is not None else None
 
-    component_two = calculationParts.group('second_component')
+    component_two = calculationParts['second_component']
     component_two = int(component_two) if component_two is not None else None
 
     # Calculate answer
@@ -149,11 +149,10 @@ def text2num(s):
             g *= 100
         else:
             x = Magnitude.get(w, None)
-            if x is not None:
-                n += g * x
-                g = 0
-            else:
+            if x is None:
                 return s
+            n += g * x
+            g = 0
     return n + g
 ##################################################################
 
@@ -199,7 +198,10 @@ class Granta(BasicNewsRecipe):
             br['username'] = self.username
             br['password'] = self.password
             br['capcha'] = captcha
-            self.log.info('Logging in with captcha ' + str(captcha_question) + ', solution ' + captcha)
+            self.log.info(
+                f'Logging in with captcha {str(captcha_question)}, solution {captcha}'
+            )
+
             br.submit()
 
         return br
@@ -241,11 +243,11 @@ class Granta(BasicNewsRecipe):
             title = self.tag_to_string(h1).strip()
             url = h1.findParent('a')['href']
             author = self.tag_to_string(item.findAll('h3')[-1]).strip()
-            desc = ''
-            for p in item.findAll('p'):
-                desc += self.tag_to_string(p)
-            sections[section].append({
-                'title': title, 'url': url, 'description': 'by ' + author + '. ' + desc})
+            desc = ''.join(self.tag_to_string(p) for p in item.findAll('p'))
+            sections[section].append(
+                {'title': title, 'url': url, 'description': f'by {author}. {desc}'}
+            )
+
 
             self.log.info('Found article:', title)
             self.log.info('\t', url)

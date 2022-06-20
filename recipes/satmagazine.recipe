@@ -98,7 +98,7 @@ class SatMagazine(BasicNewsRecipe):
         ts = soup.find('span', attrs={'class': 'master_heading'})
         ds = ' '.join(self.tag_to_string(ts).strip().split()[:2])
         self.log('Found Current Issue:', ds)
-        self.timefmt = ' [%s]' % ds
+        self.timefmt = f' [{ds}]'
 
         articles = soup.findAll('span', attrs={'class': 'heading'})
 

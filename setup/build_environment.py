@@ -24,7 +24,7 @@ def pyqt_sip_abi_version():
                 raw = f.read()
                 m = re.search(r'^sip-abi-version\s*=\s*"(.+?)"', raw, flags=re.MULTILINE)
                 if m is not None:
-                    return m.group(1)
+                    return m[1]
 
 
 def merge_paths(a, b):
@@ -54,8 +54,7 @@ if iswindows:
 
 QMAKE = 'qmake'
 for x in ('qmake-qt5', 'qt5-qmake', 'qmake'):
-    q = shutil.which(x)
-    if q:
+    if q := shutil.which(x):
         QMAKE = q
         break
 QMAKE = os.environ.get('QMAKE', QMAKE)
@@ -71,8 +70,7 @@ if (islinux or ishaiku) and not PKGCONFIG:
 def run_pkgconfig(name, envvar, default, flag, prefix):
     ans = []
     if envvar:
-        ev = os.environ.get(envvar, None)
-        if ev:
+        if ev := os.environ.get(envvar, None):
             ans = [x.strip() for x in ev.split(os.pathsep)]
             ans = [x for x in ans if x and (prefix=='-l' or os.path.exists(x))]
     if not ans:
@@ -109,7 +107,7 @@ qraw = subprocess.check_output([QMAKE, '-query']).decode('utf-8')
 
 
 def readvar(name):
-    return re.search('^%s:(.+)$' % name, qraw, flags=re.M).group(1).strip()
+    return re.search(f'^{name}:(.+)$', qraw, flags=re.M)[1].strip()
 
 
 qt = {x:readvar(y) for x, y in {'libs':'QT_INSTALL_LIBS', 'plugins':'QT_INSTALL_PLUGINS'}.items()}
@@ -162,7 +160,7 @@ elif ismacos:
     hunspell_inc_dirs = [os.path.join(sw_inc_dir, 'hunspell')]
     podofo_lib = sw_lib_dir
     ft_libs = ['freetype']
-    ft_inc_dirs = [sw + '/include/freetype2']
+    ft_inc_dirs = [f'{sw}/include/freetype2']
     SSL = os.environ.get('OPENSSL_DIR', os.path.join(sw, 'private', 'ssl'))
     openssl_inc_dirs = [os.path.join(SSL, 'include')]
     openssl_lib_dirs = [os.path.join(SSL, 'lib')]
@@ -176,7 +174,7 @@ else:
     sw = os.environ.get('SW', os.path.expanduser('~/sw'))
     podofo_inc = '/usr/include/podofo'
     podofo_lib = '/usr/lib'
-    if not os.path.exists(podofo_inc + '/podofo.h'):
+    if not os.path.exists(f'{podofo_inc}/podofo.h'):
         podofo_inc = os.path.join(sw, 'include', 'podofo')
         podofo_lib = os.path.join(sw, 'lib')
 

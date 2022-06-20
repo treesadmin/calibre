@@ -111,12 +111,10 @@ class NeueOsnabrueckerZeitung(BasicNewsRecipe):
 
     def print_version(self, url):
         url_split = url.split('/')
-        return 'http://www.noz.de/socialmediabar/print/article/' + url_split[-2]
+        return f'http://www.noz.de/socialmediabar/print/article/{url_split[-2]}'
 
     def preprocess_html(self, soup):
-        # remove first paragraph
-        paragraph = soup.find('p')
-        if paragraph:
+        if paragraph := soup.find('p'):
             paragraph.extract()
         else:
             self.abort_article()

@@ -41,4 +41,4 @@ class dailyreckoning_us(BasicNewsRecipe):
         return article.get('feedburner_origlink', article.get('link'))
 
     def print_version(self, url):
-        return url + 'print/'
+        return f'{url}print/'

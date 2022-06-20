@@ -64,15 +64,14 @@ class Reuters(BasicNewsRecipe):
         for section_title in sorted(sections):
             slug = sections[section_title]
             self.log(section_title)
-            articles = list(self.parse_reuters_section(base, slug))
-            if articles:
+            if articles := list(self.parse_reuters_section(base, slug)):
                 ans.append((section_title, articles))
             if self.test and len(ans) >= self.test[0]:
                 break
         return ans
 
     def parse_reuters_section(self, base, slug):
-        url = 'https://' + base + '/' + slug
+        url = f'https://{base}/{slug}'
         try:
             soup = self.index_to_soup(url)
         except Exception:
@@ -82,6 +81,6 @@ class Reuters(BasicNewsRecipe):
             h3 = div.find(**classes('story-title'))
             a = h3.parent
             title = self.tag_to_string(h3)
-            url = 'https://{}{}'.format(base, a['href'])
+            url = f"https://{base}{a['href']}"
             self.log('\t', title, url)
             yield {'title': title, 'url': url}

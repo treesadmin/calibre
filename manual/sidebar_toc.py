@@ -43,7 +43,10 @@ ID li > input[type=checkbox]:checked + label:before {
 ID li > input[type=checkbox]:not(:checked) + label:before {
     content: "\025b8";
 }
-'''.replace('ID', 'ul#' + ID)
+'''.replace(
+    'ID', f'ul#{ID}'
+)
+
 
 
 class checkbox(nodes.Element):
@@ -65,7 +68,7 @@ def modify_li(li):
         li['classes'].append('leaf-node')
     else:
         c = checkbox()
-        c['ids'] = ['collapse-checkbox-{}'.format(next(id_counter))]
+        c['ids'] = [f'collapse-checkbox-{next(id_counter)}']
         li.insert(0, c)
 
 
@@ -81,8 +84,10 @@ def create_toc(app, pagename):
         for li in subtree.traverse(nodes.list_item):
             modify_li(li)
         subtree['ids'] = [ID]
-        return '<style>' + CSS + '</style>' + app.builder.render_partial(
-            subtree)['fragment']
+        return (
+            f'<style>{CSS}</style>'
+            + app.builder.render_partial(subtree)['fragment']
+        )
 
 
 def add_html_context(app, pagename, templatename, context, *args):

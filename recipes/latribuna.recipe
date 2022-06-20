@@ -51,7 +51,7 @@ class LaTribuna(BasicNewsRecipe):
     feeds = [(u'Noticias', u'http://www.latribuna.hn/web2.0/?feed=rss')]
 
     def print_version(self, url):
-        return url + '&print=1'
+        return f'{url}&print=1'
 
     def preprocess_html(self, soup):
         soup.html['lang'] = self.lang
@@ -67,9 +67,9 @@ class LaTribuna(BasicNewsRecipe):
         return soup
 
     def get_cover_url(self):
-        cover_url = None
         soup = self.index_to_soup('http://www.latribuna.hn/web2.0/')
-        cover_item = soup.find('div', attrs={'class': 'portada_impresa'})
-        if cover_item:
-            cover_url = cover_item.a.img['src']
-        return cover_url
+        return (
+            cover_item.a.img['src']
+            if (cover_item := soup.find('div', attrs={'class': 'portada_impresa'}))
+            else None
+        )

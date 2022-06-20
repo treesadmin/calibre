@@ -105,8 +105,5 @@ upload_to_server = UploadToServer()
 upload_installers = UploadInstallers()
 reupload = ReUpload()
 
-commands = {}
-for x in __all__:
-    commands[x] = locals()[x]
-
+commands = {x: locals()[x] for x in __all__}
 command_names = dict(zip(commands.values(), commands.keys()))

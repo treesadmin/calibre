@@ -50,20 +50,16 @@ class TheSouthernStar(BasicNewsRecipe):
         feeds = []
         seen_titles = set()
 
-        articles = self.fetch_ss_articles(self.NEWS_INDEX, seen_titles)
-        if articles:
+        if articles := self.fetch_ss_articles(self.NEWS_INDEX, seen_titles):
             feeds.append(('News', articles))
 
-        articles = self.fetch_ss_notes(self.LOCAL_NOTES)
-        if articles:
+        if articles := self.fetch_ss_notes(self.LOCAL_NOTES):
             feeds.append(('Local Notes', articles))
 
-        articles = self.fetch_ss_articles(self.SPORT_INDEX, seen_titles)
-        if articles:
+        if articles := self.fetch_ss_articles(self.SPORT_INDEX, seen_titles):
             feeds.append(('Sport', articles))
 
-        articles = self.fetch_ss_notes(self.CLASSIFIEDS)
-        if articles:
+        if articles := self.fetch_ss_notes(self.CLASSIFIEDS):
             feeds.append(('Classifieds', articles))
 
         return feeds
@@ -73,8 +69,8 @@ class TheSouthernStar(BasicNewsRecipe):
         soup = self.index_to_soup(index)
         ts = soup.find('div', {'class': 'article'})
         ds = self.tag_to_string(ts.find('strong'))
-        self.pubdate = ' [' + ds + ']'
-        self.timefmt = ' [%s]' % ds
+        self.pubdate = f' [{ds}]'
+        self.timefmt = f' [{ds}]'
 
         for post in ts.findAll('h1'):
             a = post.find('a', href=True)
@@ -84,7 +80,7 @@ class TheSouthernStar(BasicNewsRecipe):
             seen_titles.add(title)
             url = a['href']
             if url.startswith('article'):
-                url = 'http://www.southernstar.ie/' + url
+                url = f'http://www.southernstar.ie/{url}'
             self.log('\tFound article:', title, 'at', url)
             p = post.findNextSibling('p')
             desc = None
@@ -106,7 +102,7 @@ class TheSouthernStar(BasicNewsRecipe):
             f = tempfile.NamedTemporaryFile(suffix='.html', delete=False)
             f.close()
             f = codecs.open(f.name, 'w+b', self.encoding, 'replace')
-            url = "file://" + f.name
+            url = f"file://{f.name}"
             f.write(u'<html><head><meta http-equiv="Content-Type" content="text/html; charset=' +
                     self.encoding + '"></head><body><h1>' + title + '</h1>')
             f.write(str(post.findNextSibling('p')))

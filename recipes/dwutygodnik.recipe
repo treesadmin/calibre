@@ -43,7 +43,7 @@ class dwutygodnik(BasicNewsRecipe):
 
         # convert
         self.report_progress(0.2, _('Converting to OEB'))
-        oeb = self.output_dir + '/INPUT/'
+        oeb = f'{self.output_dir}/INPUT/'
         if not os.path.exists(oeb):
             os.makedirs(oeb)
         with ZipFile(book_file.name) as f:

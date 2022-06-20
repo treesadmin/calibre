@@ -82,7 +82,9 @@ def main(args=sys.argv):
     parser = option_parser()
     command.add_all_options(parser)
     parser.set_usage(
-        'Usage: python setup.py {} [options]\n\n'.format(args[1]) + command.description)
+        f'Usage: python setup.py {args[1]} [options]\n\n' + command.description
+    )
+
 
     opts, args = parser.parse_args(args)
     opts.cli_args = args[2:]
@@ -103,8 +105,7 @@ def main(args=sys.argv):
 
     command.run_all(opts)
 
-    warnings = get_warnings()
-    if warnings:
+    if warnings := get_warnings():
         print()
         prints('There were', len(warnings), 'warning(s):')
         print()

@@ -5,6 +5,8 @@ from calibre.web.feeds.news import BasicNewsRecipe
 from datetime import datetime
 
 
+
+
 class MyDealzDE(BasicNewsRecipe):
     # Titel of the Recipe
     title = 'MyDealz'
@@ -23,8 +25,10 @@ class MyDealzDE(BasicNewsRecipe):
     description = u'MyDealz - Shopping Deals for Germany'
     # add date to description so for dayly downloads you can find them easier
     # ---- can be edit by user
-    description = description + ' fetched: ' + \
-        datetime.now().strftime("%Y-%m-%d")  # %H:%M:%S")
+    description = f'{description} fetched: ' + datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+
     # Who published the content?
     publisher = u'https://www.mydealz.de'
     # What is the content of?

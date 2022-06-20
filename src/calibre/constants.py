@@ -35,8 +35,7 @@ if iswindows:
     isxp = wver.major < 6
     isoldvista = wver.build < 6002
 is64bit = sys.maxsize > (1 << 32)
-isworker = hasenv('CALIBRE_WORKER') or hasenv('CALIBRE_SIMPLE_WORKER')
-if isworker:
+if isworker := hasenv('CALIBRE_WORKER') or hasenv('CALIBRE_SIMPLE_WORKER'):
     os.environ.pop(environ_item('CALIBRE_FORCE_ANSI'), None)
 FAKE_PROTOCOL, FAKE_HOST = 'clbr', 'internal.invalid'
 VIEWER_APP_UID = 'com.calibre-ebook.viewer'
@@ -135,7 +134,11 @@ def _get_cache_dir():
 
     if iswindows:
         try:
-            candidate = os.path.join(winutil.special_folder_path(winutil.CSIDL_LOCAL_APPDATA), '%s-cache'%__appname__)
+            candidate = os.path.join(
+                winutil.special_folder_path(winutil.CSIDL_LOCAL_APPDATA),
+                f'{__appname__}-cache',
+            )
+
         except ValueError:
             return confcache
     elif ismacos:
@@ -299,22 +302,16 @@ class Plugins(collections.Mapping):
 
     def __len__(self):
         from importlib.resources import contents
-        ans = 0
-        for x in contents('calibre_extensions'):
-            ans += 1
-        return ans
+        return sum(1 for _ in contents('calibre_extensions'))
 
     def __contains__(self, name):
         from importlib.resources import contents
-        for x in contents('calibre_extensions'):
-            if x == name:
-                return True
-        return False
+        return any(x == name for x in contents('calibre_extensions'))
 
     def __getitem__(self, name):
         from importlib import import_module
         try:
-            return import_module('calibre_extensions.' + name), ''
+            return import_module(f'calibre_extensions.{name}'), ''
         except ModuleNotFoundError:
             raise KeyError('No plugin named %r'%name)
         except Exception as err:

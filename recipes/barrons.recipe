@@ -49,7 +49,7 @@ class BarronsMagazine(BasicNewsRecipe):
             self.barrons_itp_page = br.open(MAGAZINE_INDEX).read()
             return br
         itp = quote(MAGAZINE_INDEX, safe='')
-        start_url = 'https://accounts.barrons.com/login?target=' + itp
+        start_url = f'https://accounts.barrons.com/login?target={itp}'
         self.log('Starting login process...')
         res = br.open(start_url)
         sso_url = res.geturl()
@@ -90,7 +90,10 @@ class BarronsMagazine(BasicNewsRecipe):
             res = br.open(rq)
         except Exception as err:
             if hasattr(err, 'read'):
-                raise Exception('Login request failed with error: {} and body: {}'.format(err, err.read().decode('utf-8', 'replace')))
+                raise Exception(
+                    f"Login request failed with error: {err} and body: {err.read().decode('utf-8', 'replace')}"
+                )
+
             raise
         if res.code != 200:
             raise ValueError('Failed to login, check your username and password')
@@ -112,8 +115,12 @@ class BarronsMagazine(BasicNewsRecipe):
             title = self.tag_to_string(a)
             url = a['href']
             desc = ''
-            p = art.find('p', attrs={'class': lambda x: x and ('_summary_' in x or '_byline_' in x)})
-            if p:
+            if p := art.find(
+                'p',
+                attrs={
+                    'class': lambda x: x and ('_summary_' in x or '_byline_' in x)
+                },
+            ):
                 desc += self.tag_to_string(p)
             articles.append({'title': title, 'url': url, 'description': desc})
         return [('Articles', articles)]

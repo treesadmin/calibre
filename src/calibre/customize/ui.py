@@ -73,7 +73,7 @@ def disable_plugin(plugin_or_name):
     x = getattr(plugin_or_name, 'name', plugin_or_name)
     plugin = find_plugin(x)
     if not plugin.can_be_disabled:
-        raise ValueError('Plugin %s cannot be disabled'%x)
+        raise ValueError(f'Plugin {x} cannot be disabled')
     dp = config['disabled_plugins']
     dp.add(x)
     config['disabled_plugins'] = dp
@@ -175,7 +175,11 @@ def _run_filetype_plugins(path_to_file, ft=None, occasion='preprocess'):
             try:
                 nfp = plugin.run(nfp) or nfp
             except:
-                print('Running file type plugin %s failed with traceback:'%plugin.name, file=oe)
+                print(
+                    f'Running file type plugin {plugin.name} failed with traceback:',
+                    file=oe,
+                )
+
                 traceback.print_exc(file=oe)
         sys.stdout, sys.stderr = oo, oe
     x = lambda j: os.path.normpath(os.path.normcase(j))
@@ -199,8 +203,7 @@ def run_plugins_on_postimport(db, book_id, fmt):
             try:
                 plugin.postimport(book_id, fmt, db)
             except:
-                print('Running file type plugin %s failed with traceback:'%
-                       plugin.name)
+                print(f'Running file type plugin {plugin.name} failed with traceback:')
                 traceback.print_exc()
 
 
@@ -214,8 +217,7 @@ def run_plugins_on_postadd(db, book_id, fmt_map):
             try:
                 plugin.postadd(book_id, fmt_map, db)
             except Exception:
-                print('Running file type plugin %s failed with traceback:'%
-                       plugin.name)
+                print(f'Running file type plugin {plugin.name} failed with traceback:')
                 traceback.print_exc()
 
 # }}}
@@ -255,10 +257,9 @@ def output_profiles():
 def interface_actions():
     customization = config['plugin_customization']
     for plugin in _initialized_plugins:
-        if isinstance(plugin, InterfaceAction):
-            if not is_disabled(plugin):
-                plugin.site_customization = customization.get(plugin.name, '')
-                yield plugin
+        if isinstance(plugin, InterfaceAction) and not is_disabled(plugin):
+            plugin.site_customization = customization.get(plugin.name, '')
+            yield plugin
 # }}}
 
 # Preferences Plugins # {{{
@@ -267,10 +268,9 @@ def interface_actions():
 def preferences_plugins():
     customization = config['plugin_customization']
     for plugin in _initialized_plugins:
-        if isinstance(plugin, PreferencesPlugin):
-            if not is_disabled(plugin):
-                plugin.site_customization = customization.get(plugin.name, '')
-                yield plugin
+        if isinstance(plugin, PreferencesPlugin) and not is_disabled(plugin):
+            plugin.site_customization = customization.get(plugin.name, '')
+            yield plugin
 # }}}
 
 # Library Closed Plugins # {{{
@@ -279,18 +279,16 @@ def preferences_plugins():
 def available_library_closed_plugins():
     customization = config['plugin_customization']
     for plugin in _initialized_plugins:
-        if isinstance(plugin, LibraryClosedPlugin):
-            if not is_disabled(plugin):
-                plugin.site_customization = customization.get(plugin.name, '')
-                yield plugin
+        if isinstance(plugin, LibraryClosedPlugin) and not is_disabled(plugin):
+            plugin.site_customization = customization.get(plugin.name, '')
+            yield plugin
 
 
 def has_library_closed_plugins():
-    for plugin in _initialized_plugins:
-        if isinstance(plugin, LibraryClosedPlugin):
-            if not is_disabled(plugin):
-                return True
-    return False
+    return any(
+        isinstance(plugin, LibraryClosedPlugin) and not is_disabled(plugin)
+        for plugin in _initialized_plugins
+    )
 # }}}
 
 # Store Plugins # {{{
@@ -311,17 +309,11 @@ def available_store_plugins():
 
 
 def stores():
-    stores = set()
-    for plugin in store_plugins():
-        stores.add(plugin.name)
-    return stores
+    return {plugin.name for plugin in store_plugins()}
 
 
 def available_stores():
-    stores = set()
-    for plugin in available_store_plugins():
-        stores.add(plugin.name)
-    return stores
+    return {plugin.name for plugin in available_store_plugins()}
 
 # }}}
 
@@ -462,10 +454,9 @@ def set_file_type_metadata(stream, mi, ftype, report_error=None):
 
 def can_set_metadata(ftype):
     ftype = ftype.lower().strip()
-    for plugin in _metadata_writers.get(ftype, ()):
-        if not is_disabled(plugin):
-            return True
-    return False
+    return any(
+        not is_disabled(plugin) for plugin in _metadata_writers.get(ftype, ())
+    )
 
 # }}}
 
@@ -483,7 +474,7 @@ def add_plugin(path_to_zip_file):
             'A system plugin with the name %r already exists' % plugin.name)
     plugin = initialize_plugin(plugin, path_to_zip_file, PluginInstallationType.EXTERNAL)
     plugins = config['plugins']
-    zfp = os.path.join(plugin_dir, plugin.name+'.zip')
+    zfp = os.path.join(plugin_dir, f'{plugin.name}.zip')
     if os.path.exists(zfp):
         os.remove(zfp)
     shutil.copyfile(path_to_zip_file, zfp)
@@ -500,7 +491,7 @@ def remove_plugin(plugin_or_name):
     if name in plugins:
         removed = True
         try:
-            zfp = os.path.join(plugin_dir, name+'.zip')
+            zfp = os.path.join(plugin_dir, f'{name}.zip')
             if os.path.exists(zfp):
                 os.remove(zfp)
             zfp = plugins[name]
@@ -565,11 +556,11 @@ def plugin_for_output_format(fmt):
 
 
 def available_output_formats():
-    formats = set()
-    for plugin in output_format_plugins():
-        if not is_disabled(plugin):
-            formats.add(plugin.file_type)
-    return formats
+    return {
+        plugin.file_type
+        for plugin in output_format_plugins()
+        if not is_disabled(plugin)
+    }
 
 # }}}
 
@@ -603,21 +594,25 @@ def plugin_for_catalog_format(fmt):
 
 def device_plugins(include_disabled=False):
     for plugin in _initialized_plugins:
-        if isinstance(plugin, DevicePlugin):
-            if include_disabled or not is_disabled(plugin):
-                if platform in plugin.supported_platforms:
-                    if getattr(plugin, 'plugin_needs_delayed_initialization',
-                            False):
-                        plugin.do_delayed_plugin_initialization()
-                    yield plugin
+        if (
+            isinstance(plugin, DevicePlugin)
+            and (include_disabled or not is_disabled(plugin))
+            and platform in plugin.supported_platforms
+        ):
+            if getattr(plugin, 'plugin_needs_delayed_initialization',
+                    False):
+                plugin.do_delayed_plugin_initialization()
+            yield plugin
 
 
 def disabled_device_plugins():
     for plugin in _initialized_plugins:
-        if isinstance(plugin, DevicePlugin):
-            if is_disabled(plugin):
-                if platform in plugin.supported_platforms:
-                    yield plugin
+        if (
+            isinstance(plugin, DevicePlugin)
+            and is_disabled(plugin)
+            and platform in plugin.supported_platforms
+        ):
+            yield plugin
 # }}}
 
 # Metadata sources2 {{{
@@ -642,12 +637,15 @@ def patch_metadata_plugins(possibly_updated_plugins):
     for i, plugin in enumerate(_initialized_plugins):
         if isinstance(plugin, Source) and plugin.name in builtin_names:
             pup = possibly_updated_plugins.get(plugin.name)
-            if pup is not None:
-                if pup.version > plugin.version and pup.minimum_calibre_version <= numeric_version:
-                    patches[i] = pup(None)
-                    # Metadata source plugins dont use initialize() but that
-                    # might change in the future, so be safe.
-                    patches[i].initialize()
+            if (
+                pup is not None
+                and pup.version > plugin.version
+                and pup.minimum_calibre_version <= numeric_version
+            ):
+                patches[i] = pup(None)
+                # Metadata source plugins dont use initialize() but that
+                # might change in the future, so be safe.
+                patches[i].initialize()
     for i, pup in iteritems(patches):
         _initialized_plugins[i] = pup
 # }}}
@@ -734,11 +732,11 @@ def initialize_plugins(perf=False):
             if not isinstance(zfp, type):
                 # We have a plugin name
                 pname, path = zfp
-                zfp = os.path.join(plugin_dir, pname+'.zip')
+                zfp = os.path.join(plugin_dir, f'{pname}.zip')
                 if not os.path.exists(zfp):
                     zfp = path
             try:
-                plugin = load_plugin(zfp) if not isinstance(zfp, type) else zfp
+                plugin = zfp if isinstance(zfp, type) else load_plugin(zfp)
             except PluginNotFound:
                 continue
             if perf:
@@ -769,8 +767,7 @@ initialize_plugins()
 
 
 def initialized_plugins():
-    for plugin in _initialized_plugins:
-        yield plugin
+    yield from _initialized_plugins
 
 # }}}
 
@@ -840,7 +837,7 @@ def main(args=sys.argv):
         name, custom = opts.customize_plugin.split(',')
         plugin = find_plugin(name.strip())
         if plugin is None:
-            print('No plugin with the name %s exists'%name)
+            print(f'No plugin with the name {name} exists')
             return 1
         customize_plugin(plugin, custom)
     if opts.enable_plugin is not None:
@@ -851,7 +848,7 @@ def main(args=sys.argv):
         type_len = name_len = 0
         for plugin in initialized_plugins():
             type_len, name_len = max(type_len, len(plugin.type)), max(name_len, len(plugin.name))
-        fmt = '%-{}s%-{}s%-15s%-15s%s'.format(type_len+1, name_len+1)
+        fmt = f'%-{type_len + 1}s%-{name_len + 1}s%-15s%-15s%s'
         print(fmt%tuple(('Type|Name|Version|Disabled|Site Customization'.split('|'))))
         print()
         for plugin in initialized_plugins():

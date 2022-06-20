@@ -14,6 +14,8 @@ feel free to modify this to your own needs
 '''
 
 
+
+
 class Spiegel_DE_all(BasicNewsRecipe):
     # Titel of the Recipe
     title = u'Spiegel Online RSS - German alle Themen'
@@ -36,8 +38,10 @@ class Spiegel_DE_all(BasicNewsRecipe):
     # above a long description, but we use a shorter one
     description = u'Spiegel Online RSS News'
     # add fetching date to the description
-    description = description + ' fetched: ' + datetime.now(
-            ).strftime("%Y-%m-%d")  # %H:%M:%S")
+    description = f'{description} fetched: ' + datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+
     # Who published the content?
     publisher = u'SPIEGEL ONLINE Gmbh'
     cover_url = 'https://de.m.wikipedia.org/wiki/Datei:Spiegel_Online_logo.svg'

@@ -84,8 +84,7 @@ class DunyaHalleri_HaftaninOzeti(BasicNewsRecipe):
             with closing(open_func(url_or_raw)) as f:
                 _raw = f.read()
             if not _raw:
-                raise RuntimeError(
-                    'Could not fetch index from %s' % url_or_raw)
+                raise RuntimeError(f'Could not fetch index from {url_or_raw}')
         else:
             _raw = url_or_raw
 
@@ -136,17 +135,13 @@ class DunyaHalleri_HaftaninOzeti(BasicNewsRecipe):
         ans = []
 
         for li in soup.findNext('ol').findAll('li'):
-            a = li.find('a', href=True)
-
-            if not a:
-                url = base_url
-                feed = self.tag_to_string(li, use_alt=True).strip()
-                pubdate = self.issue_date.strftime('%a, %d %b')
-            else:
+            if a := li.find('a', href=True):
                 url = base_url + re.sub(r'\.\/', '', a['href'])
                 feed = self.tag_to_string(a, use_alt=True).strip()
-                pubdate = self.issue_date.strftime('%a, %d %b')
-
+            else:
+                url = base_url
+                feed = self.tag_to_string(li, use_alt=True).strip()
+            pubdate = self.issue_date.strftime('%a, %d %b')
             title = self.issue_title + \
                 ' (' + self.issue_date.strftime('%d %B %Y') + ')'
 
@@ -178,15 +173,14 @@ class DunyaHalleri_HaftaninOzeti(BasicNewsRecipe):
             caption = new_tag(soup, 'pre')
             img = new_tag(soup, 'img')
 
-            m = re.match(
+            if m := re.match(
                 r'https\:\/\/(www\.)?youtube.com\/(embed\/|watch\?v\=)'
                 r'(?P<vid>.*?)(([\?\&].*)|$|\n)',
-                iframe['src'])
-            if m:
+                iframe['src'],
+            ):
                 # youtube
-                img_src = 'https://img.youtube.com/vi/' + \
-                    m.group('vid') + '/0.jpg'
-                a_href = 'https://www.youtube.com/watch?v=' + m.group('vid')
+                img_src = (('https://img.youtube.com/vi/' + m['vid']) + '/0.jpg')
+                a_href = 'https://www.youtube.com/watch?v=' + m['vid']
             else:
                 # not youtube
                 # default cover image for non-youtube embeded pages
@@ -194,7 +188,7 @@ class DunyaHalleri_HaftaninOzeti(BasicNewsRecipe):
                 a_href = iframe['src']
 
             img.attrs = [('src', img_src)]
-            caption.append('Video: ' + a_href)
+            caption.append(f'Video: {a_href}')
             caption.attrs = [('class', 'caption')]
             a.attrs = [('href', a_href), ('target', '_blank')]
             a.append(img)
@@ -225,8 +219,7 @@ class DunyaHalleri_HaftaninOzeti(BasicNewsRecipe):
     def download_cover_img(self):
         try:
             self._download_cover_img()
-            self.report_progress(
-                1, ('Downloaded cover to %s') % self.cover_img_path)
+            self.report_progress(1, f'Downloaded cover to {self.cover_img_path}')
         except:
             self.log.exception('Failed to download cover img')
             self.cover_img_path = None
@@ -257,8 +250,7 @@ class DunyaHalleri_HaftaninOzeti(BasicNewsRecipe):
         self.download_cover_img()
         if getattr(self, 'cover_img_path', None) is not None:
             logo_file = self.cover_img_path
-            self.report_progress(
-                1, ('using cover img from %s') % logo_file)
+            self.report_progress(1, f'using cover img from {logo_file}')
             logo = Image.open(logo_file, 'r')
             width, height = logo.size
             logo = logo.resize(

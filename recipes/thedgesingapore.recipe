@@ -39,7 +39,7 @@ class Edgesingapore(BasicNewsRecipe):
     feeds = [(u'Articles', u'http://feeds.feedburner.com/edgesg')]
 
     def print_version(self, url):
-        return url + '?tmpl=component&print=1'
+        return f'{url}?tmpl=component&print=1'
 
     def preprocess_html(self, soup):
         attribs = ['style', 'font', 'valign', 'colspan', 'width', 'height', 'rowspan', 'summary', 'align', 'cellspacing', 'cellpadding', 'frames', 'rules', 'border'  # noqa

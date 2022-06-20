@@ -10,6 +10,8 @@ www.autosport.com
 from calibre.web.feeds.news import BasicNewsRecipe
 
 
+
+
 class autosport(BasicNewsRecipe):
     title = u'Autosport'
     __author__ = 'MrStefan <mrstefaan@gmail.com>'
@@ -22,12 +24,11 @@ class autosport(BasicNewsRecipe):
     remove_javascript = True
     no_stylesheets = True
 
-    keep_only_tags = []
-    keep_only_tags.append(dict(name='h1', attrs={'class': 'news_headline'}))
-    keep_only_tags.append(
-        dict(name='td', attrs={'class': 'news_article_author'}))
-    keep_only_tags.append(
-        dict(name='td', attrs={'class': 'news_article_date'}))
-    keep_only_tags.append(dict(name='p'))
+    keep_only_tags = [
+        dict(name='h1', attrs={'class': 'news_headline'}),
+        dict(name='td', attrs={'class': 'news_article_author'}),
+        dict(name='td', attrs={'class': 'news_article_date'}),
+        dict(name='p'),
+    ]
 
     feeds = [(u'ALL NEWS', u'http://www.autosport.com/rss/allnews.xml')]

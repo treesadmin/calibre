@@ -40,13 +40,12 @@ class LaNacionChile(BasicNewsRecipe):
 
     def print_version(self, url):
         toprint = quote(url, ':/')
-        return u'http://www.lanacion.cl/cgi-bx/imprimir.cgi?_URL=' + toprint
+        return f'http://www.lanacion.cl/cgi-bx/imprimir.cgi?_URL={toprint}'
 
     def preprocess_html(self, soup):
         del soup.body['onload']
         soup.head.base.extract()
-        item = soup.find('a', attrs={'href': 'javascript:window.close()'})
-        if item:
+        if item := soup.find('a', attrs={'href': 'javascript:window.close()'}):
             item.extract()
         mtag = '<meta http-equiv="Content-Language" content="es-CL"/>'
         soup.head.insert(0, mtag)

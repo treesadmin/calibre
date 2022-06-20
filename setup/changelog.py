@@ -21,10 +21,7 @@ def parse(raw, parse_dates=True):
             if current_entry is not None:
                 raise ValueError(f'Start of entry while previous entry is still active at line: {linenum}')
             version, draw = parts
-            if parse_dates:
-                d = date(*map(int, draw.split('-')))
-            else:
-                d = draw
+            d = date(*map(int, draw.split('-'))) if parse_dates else draw
             current_entry = {'version': version, 'date': d, 'new features': [], 'bug fixes': [], 'improved recipes': [], 'new recipes': []}
             current_section = 'new features'
             return in_entry
@@ -101,9 +98,9 @@ def parse(raw, parse_dates=True):
                 item['description'] = ''
             return in_item
         if 'description' in item:
-            item['description'] += stripped_line + ' '
+            item['description'] += f'{stripped_line} '
         else:
-            item['title'] += ' ' + stripped_line
+            item['title'] += f' {stripped_line}'
         return in_item
 
     state = normal
@@ -122,15 +119,13 @@ def migrate():
         meta = []
         if item.get('type') == 'major':
             meta.append(item['type'])
-        for x in item.get('tickets', ()):
-            meta.append(str(x))
+        meta.extend(str(x) for x in item.get('tickets', ()))
         title = item['title']
         if meta:
             meta = ' '.join(meta)
             title = f'[{meta}] {title}'
         lines.append(f'- {title}')
-        d = item.get('description')
-        if d:
+        if d := item.get('description'):
             lines.append(''), lines.append(d)
         lines.append('')
 

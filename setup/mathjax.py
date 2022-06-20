@@ -47,7 +47,7 @@ class MathJax(ReVendor):
                 src = os.path.join(src, 'es5')
             self.info('Adding MathJax...')
             for x in 'core loader startup input/tex-full input/asciimath input/mml input/mml/entities output/chtml'.split():
-                self.add_file(self.j(src, x + '.js'), x + '.js')
+                self.add_file(self.j(src, f'{x}.js'), f'{x}.js')
             self.add_tree(
                 self.j(src, 'output', 'chtml'), 'output/chtml')
             etag = self.h.hexdigest()

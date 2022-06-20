@@ -15,7 +15,7 @@ def cz_title_time():
     Uses hardcoded lookup table of day and month names as strftime requires
     locale change that is not thread safe.
     """
-    today = datetime.today()
+    today = datetime.now()
     weekday = CZ_DAYS[today.weekday()]
     month = CZ_MONTHS[today.month-1]
     return '{weekday}, {day} {month} {year}'.format(weekday=weekday,

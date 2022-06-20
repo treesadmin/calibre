@@ -100,26 +100,31 @@ class SourceForge(Base):  # {{{
 
     def __init__(self, files, project, version, username, replace=False):
         self.username, self.project, self.version = username, project, version
-        self.base = '/home/frs/project/c/ca/' + project
-        self.rdir = self.base + '/' + version
+        self.base = f'/home/frs/project/c/ca/{project}'
+        self.rdir = f'{self.base}/{version}'
         self.files = files
 
     def __call__(self):
         for x in self.files:
             start = time.time()
             self.info('Uploading', x)
-            for i in range(5):
+            for _ in range(5):
                 try:
-                    check_call([
-                        'rsync', '-h', '-zz', '--progress', '-e', 'ssh -x', x,
-                        '%s,%s@frs.sourceforge.net:%s' %
-                        (self.username, self.project, self.rdir + '/')
-                    ])
+                    check_call(
+                        [
+                            'rsync',
+                            '-h',
+                            '-zz',
+                            '--progress',
+                            '-e',
+                            'ssh -x',
+                            x,
+                            f'{self.username},{self.project}@frs.sourceforge.net:{self.rdir}/',
+                        ]
+                    )
+
                 except KeyboardInterrupt:
                     raise SystemExit(1)
-                except:
-                    print('\nUpload failed, trying again in 30 seconds')
-                    time.sleep(30)
                 else:
                     break
             print('Uploaded in', int(time.time() - start), 'seconds\n\n')
@@ -136,7 +141,7 @@ class GitHub(Base):  # {{{
         self.files, self.reponame, self.version, self.username, self.password, self.replace = (
             files, reponame, version, username, password, replace
         )
-        self.current_tag_name = 'v' + self.version
+        self.current_tag_name = f'v{self.version}'
         import requests
         self.requests = s = requests.Session()
         s.auth = (self.username, self.password)
@@ -155,16 +160,13 @@ class GitHub(Base):  # {{{
             )
             fname = os.path.basename(path)
             if fname in existing_assets:
-                self.info(
-                    'Deleting %s from GitHub with id: %s' %
-                    (fname, existing_assets[fname])
-                )
+                self.info(f'Deleting {fname} from GitHub with id: {existing_assets[fname]}')
                 r = self.requests.delete(url.format(existing_assets[fname]))
                 if r.status_code != 204:
-                    self.fail(r, 'Failed to delete %s from GitHub' % fname)
+                    self.fail(r, f'Failed to delete {fname} from GitHub')
             r = self.do_upload(upload_url, path, desc, fname)
             if r.status_code != 201:
-                self.fail(r, 'Failed to upload file: %s' % fname)
+                self.fail(r, f'Failed to upload file: {fname}')
             try:
                 r = self.requests.patch(
                     url.format(r.json()['id']),
@@ -183,7 +185,7 @@ class GitHub(Base):  # {{{
                     })
                 )
             if r.status_code != 200:
-                self.fail(r, 'Failed to set label for %s' % fname)
+                self.fail(r, f'Failed to set label for {fname}')
 
     def clean_older_releases(self, releases):
         for release in releases:
@@ -195,18 +197,21 @@ class GitHub(Base):  # {{{
                 )
                 for asset in release['assets']:
                     r = self.requests.delete(
-                        self.API + 'repos/%s/%s/releases/assets/%s' %
-                        (self.username, self.reponame, asset['id'])
+                        (
+                            self.API
+                            + f"repos/{self.username}/{self.reponame}/releases/assets/{asset['id']}"
+                        )
                     )
+
                     if r.status_code != 204:
                         self.fail(
-                            r, 'Failed to delete obsolete asset: %s for release: %s'
-                            % (asset['name'], release['tag_name'])
+                            r,
+                            f"Failed to delete obsolete asset: {asset['name']} for release: {release['tag_name']}",
                         )
 
     def do_upload(self, url, path, desc, fname):
         mime_type = mimetypes.guess_type(fname)[0] or 'application/octet-stream'
-        self.info('Uploading to GitHub: %s (%s)' % (fname, mime_type))
+        self.info(f'Uploading to GitHub: {fname} ({mime_type})')
         with ReadFileWithProgressReporting(path) as f:
             return self.requests.post(
                 url,
@@ -219,7 +224,7 @@ class GitHub(Base):  # {{{
             )
 
     def fail(self, r, msg):
-        print(msg, ' Status Code: %s' % r.status_code, file=sys.stderr)
+        print(msg, f' Status Code: {r.status_code}', file=sys.stderr)
         print("JSON from response:", file=sys.stderr)
         pprint(dict(r.json()), stream=sys.stderr)
         raise SystemExit(1)
@@ -229,16 +234,18 @@ class GitHub(Base):  # {{{
         return error_code == 'already_exists'
 
     def existing_assets(self, release_id):
-        url = self.API + 'repos/%s/%s/releases/%s/assets' % (
-            self.username, self.reponame, release_id
+        url = (
+            self.API
+            + f'repos/{self.username}/{self.reponame}/releases/{release_id}/assets'
         )
+
         r = self.requests.get(url)
         if r.status_code != 200:
             self.fail('Failed to get assets for release')
         return {asset['name']: asset['id'] for asset in r.json()}
 
     def releases(self):
-        url = self.API + 'repos/%s/%s/releases' % (self.username, self.reponame)
+        url = self.API + f'repos/{self.username}/{self.reponame}/releases'
         r = self.requests.get(url)
         if r.status_code != 200:
             self.fail(r, 'Failed to list releases')
@@ -250,20 +257,23 @@ class GitHub(Base):  # {{{
             # Check for existing release
             if release['tag_name'] == self.current_tag_name:
                 return release
-        url = self.API + 'repos/%s/%s/releases' % (self.username, self.reponame)
+        url = self.API + f'repos/{self.username}/{self.reponame}/releases'
         r = self.requests.post(
             url,
-            data=json.dumps({
-                'tag_name': self.current_tag_name,
-                'target_commitish': 'master',
-                'name': 'version %s' % self.version,
-                'body': 'Release version %s' % self.version,
-                'draft': False,
-                'prerelease': False
-            })
+            data=json.dumps(
+                {
+                    'tag_name': self.current_tag_name,
+                    'target_commitish': 'master',
+                    'name': f'version {self.version}',
+                    'body': f'Release version {self.version}',
+                    'draft': False,
+                    'prerelease': False,
+                }
+            ),
         )
+
         if r.status_code != 201:
-            self.fail(r, 'Failed to create release for version: %s' % self.version)
+            self.fail(r, f'Failed to create release for version: {self.version}')
         return r.json()
 
 
@@ -272,10 +282,12 @@ class GitHub(Base):  # {{{
 
 def generate_index():  # {{{
     os.chdir('/srv/download')
-    releases = set()
-    for x in os.listdir('.'):
-        if os.path.isdir(x) and '.' in x:
-            releases.add(tuple((int(y) for y in x.split('.'))))
+    releases = {
+        tuple((int(y) for y in x.split('.')))
+        for x in os.listdir('.')
+        if os.path.isdir(x) and '.' in x
+    }
+
     rmap = OrderedDict()
     for rnum in sorted(releases, reverse=True):
         series = rnum[:2] if rnum[0] == 0 else rnum[:1]
@@ -296,14 +308,13 @@ def generate_index():  # {{{
     dt { font-weight: bold }
     dd { margin-bottom: 2ex }
     '''
-    body = []
-    for series in rmap:
-        body.append(
-            '<li><a href="{0}.html" title="Releases in the {0}.x series">{0}.x</a>\xa0\xa0\xa0<span style="font-size:smaller">[{1} releases]</span></li>'
-            .format(  # noqa
-                '.'.join(map(type(''), series)), len(rmap[series])
-            )
+    body = [
+        '<li><a href="{0}.html" title="Releases in the {0}.x series">{0}.x</a>\xa0\xa0\xa0<span style="font-size:smaller">[{1} releases]</span></li>'.format(  # noqa
+            '.'.join(map(type(''), series)), len(rmap[series])
         )
+        for series in rmap
+    ]
+
     body = '<ul>{0}</ul>'.format(' '.join(body))
     index = template.format(
         title='Previous calibre releases',
@@ -323,12 +334,13 @@ def generate_index():  # {{{
         ]
         body = '<ul class="release-list">{0}</ul>'.format(' '.join(body))
         index = template.format(
-            title='Previous calibre releases (%s.x)' % sname,
+            title=f'Previous calibre releases ({sname}.x)',
             style=style,
             msg='Choose a calibre release',
-            body=body
+            body=body,
         )
-        with open('%s.html' % sname, 'wb') as f:
+
+        with open(f'{sname}.html', 'wb') as f:
             f.write(index.encode('utf-8'))
 
         for r in releases:
@@ -337,8 +349,7 @@ def generate_index():  # {{{
             try:
                 body = []
                 files = os.listdir('.')
-                windows = [x for x in files if x.endswith('.msi')]
-                if windows:
+                if windows := [x for x in files if x.endswith('.msi')]:
                     windows = [
                         '<li><a href="{0}" title="{1}">{1}</a></li>'.format(
                             x, 'Windows 64-bit Installer'
@@ -350,22 +361,21 @@ def generate_index():  # {{{
                             ' '.join(windows)
                         )
                     )
-                portable = [x for x in files if '-portable-' in x]
-                if portable:
+                if portable := [x for x in files if '-portable-' in x]:
                     body.append(
                         '<dt>Calibre Portable</dt><dd><a href="{0}" title="{1}">{1}</a></dd>'
                         .format(portable[0], 'Calibre Portable Installer')
                     )
-                osx = [x for x in files if x.endswith('.dmg')]
-                if osx:
+                if osx := [x for x in files if x.endswith('.dmg')]:
                     body.append(
                         '<dt>Apple Mac</dt><dd><a href="{0}" title="{1}">{1}</a></dd>'
                         .format(osx[0], 'OS X Disk Image (.dmg)')
                     )
-                linux = [
-                    x for x in files if x.endswith('.txz') or x.endswith('tar.bz2')
-                ]
-                if linux:
+                if linux := [
+                    x
+                    for x in files
+                    if x.endswith('.txz') or x.endswith('tar.bz2')
+                ]:
                     linux = [
                         '<li><a href="{0}" title="{1}">{1}</a></li>'.format(
                             x, 'Linux 64-bit binary'
@@ -377,8 +387,9 @@ def generate_index():  # {{{
                             ' '.join(linux)
                         )
                     )
-                source = [x for x in files if x.endswith('.xz') or x.endswith('.gz')]
-                if source:
+                if source := [
+                    x for x in files if x.endswith('.xz') or x.endswith('.gz')
+                ]:
                     body.append(
                         '<dt>Source Code</dt><dd><a href="{0}" title="{1}">{1}</a></dd>'
                         .format(source[0], 'Source code (all platforms)')
@@ -386,11 +397,12 @@ def generate_index():  # {{{
 
                 body = '<dl>{0}</dl>'.format(''.join(body))
                 index = template.format(
-                    title='calibre release (%s)' % rname,
+                    title=f'calibre release ({rname})',
                     style=style,
                     msg='',
-                    body=body
+                    body=body,
                 )
+
                 with open('index.html', 'wb') as f:
                     f.write(index.encode('utf-8'))
             finally:

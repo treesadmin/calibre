@@ -34,7 +34,7 @@ class AdvancedUserRecipe1282101454(BasicNewsRecipe):
             content = '<html><body><h1>{title}</h1><h3>{desc}</h3><p>{author}</p><div>{content}</div></body></html>'.format(
                 title=title, author=author, desc=desc, content=content)
             if author:
-                desc += ' by ' + author
+                desc += f' by {author}'
             with PersistentTemporaryFile('popsci.html') as pt:
                 pt.write(content.encode('utf-8'))
             ans[section].append({

@@ -43,13 +43,13 @@ class Noticias(BasicNewsRecipe):
     ]
 
     def get_cover_url(self):
-        cover_url = None
         index = 'http://www.revistabla.com'
         soup = self.index_to_soup(index)
-        link_item = soup.find('div', attrs={'class': 'header_right'})
-        if link_item:
-            cover_url = link_item.img['src']
-        return cover_url
+        return (
+            link_item.img['src']
+            if (link_item := soup.find('div', attrs={'class': 'header_right'}))
+            else None
+        )
 
     def preprocess_html(self, soup):
         for item in soup.findAll(style=True):

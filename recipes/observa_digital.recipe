@@ -50,8 +50,7 @@ class Noticias(BasicNewsRecipe):
         cover_url = None
         index = 'http://www.elobservador.com.uy/elobservador/nav_portada.asp?suplemento=dia'
         soup = self.index_to_soup(index)
-        link_item = soup.find('img', attrs={'usemap': '#mapeo_imagenes'})
-        if link_item:
+        if link_item := soup.find('img', attrs={'usemap': '#mapeo_imagenes'}):
             cover_url = 'http://www.elobservador.com.uy' + \
                 link_item['src'].strip()
 

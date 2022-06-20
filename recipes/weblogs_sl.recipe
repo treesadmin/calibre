@@ -136,17 +136,16 @@ class weblogssl(BasicNewsRecipe):
                 fuente2pre = fuente.replace('http://www.youtube.com/embed/','http://img.youtube.com/vi/')
                 fuente2 = fuente2pre.replace('https://www.youtube.com/embed/','https://img.youtube.com/vi/')
                 fuente3 = fuente2.replace('?rel=0','')
-                video_yt['src'] = fuente3 + '/0.jpg'
+                video_yt['src'] = f'{fuente3}/0.jpg'
 
         for video_yt2 in soup.findAll('iframe',{'allowfullscreen'}):
             if video_yt2:
-                esyt = video_yt2.find('youtube')
-                if esyt:
+                if esyt := video_yt2.find('youtube'):
                     video_yt2.name = 'img'
                     fuente = video_yt2['src']
                     fuente2pre = fuente.replace('http://www.youtube.com/embed/','http://img.youtube.com/vi/')
                     fuente2 = fuente2pre.replace('https://www.youtube.com/embed/','https://img.youtube.com/vi/')
-                    video_yt2['src'] = fuente2 + '/0.jpg'
+                    video_yt2['src'] = f'{fuente2}/0.jpg'
 
         return soup
 

@@ -52,9 +52,7 @@ elif ismacos:
 elif iswindows:
     dlls += ['WinExtras']
 
-QT_DLLS = frozenset(
-    'Qt5' + x for x in dlls
-)
+QT_DLLS = frozenset(f'Qt5{x}' for x in dlls)
 
 QT_PLUGINS = [
     'imageformats',
@@ -119,16 +117,22 @@ def initialize_constants():
     entry_points = eval(epsrc, {'__appname__': calibre_constants['appname']})
 
     def e2b(ep):
-        return re.search(r'\s*(.*?)\s*=', ep).group(1).strip()
+        return re.search(r'\s*(.*?)\s*=', ep)[1].strip()
 
     def e2s(ep, base='src'):
         return (
-            base + os.path.sep +
-            re.search(r'.*=\s*(.*?):', ep).group(1).replace('.', '/') + '.py'
+            (
+                (
+                    base
+                    + os.path.sep
+                    + re.search(r'.*=\s*(.*?):', ep)[1].replace('.', '/')
+                )
+                + '.py'
+            )
         ).strip()
 
     def e2m(ep):
-        return re.search(r'.*=\s*(.*?)\s*:', ep).group(1).strip()
+        return re.search(r'.*=\s*(.*?)\s*:', ep)[1].strip()
 
     def e2f(ep):
         return ep[ep.rindex(':') + 1:].strip()

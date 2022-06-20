@@ -63,25 +63,37 @@ def create_installer(env):
     arch = 'x64' if is64bit else 'x86'
     cmd = [CANDLE, '-nologo', '-arch', arch, '-ext', 'WiXUtilExtension', '-o', wixobj, wxsf]
     run(*cmd)
-    installer = j(env.dist, '%s%s-%s.msi' % (
-        calibre_constants['appname'], ('-64bit' if is64bit else ''), calibre_constants['version']))
+    installer = j(
+        env.dist,
+        f"{calibre_constants['appname']}{'-64bit' if is64bit else ''}-{calibre_constants['version']}.msi",
+    )
+
     license = j(env.src_root, 'LICENSE.rtf')
     banner = j(env.src_root, 'icons', 'wix-banner.bmp')
     dialog = j(env.src_root, 'icons', 'wix-dialog.bmp')
-    cmd = [LIGHT, '-nologo', '-ext', 'WixUIExtension',
-           '-cultures:en-us', '-loc', enusf, wixobj,
-           '-ext', 'WixUtilExtension',
-           '-o', installer,
-           '-dWixUILicenseRtf=' + license,
-           '-dWixUIBannerBmp=' + banner,
-           '-dWixUIDialogBmp=' + dialog]
-    cmd.extend([
-        '-sice:ICE60',  # No language in dlls warning
-        '-sice:ICE61',  # Allow upgrading with same version number
-        '-sice:ICE40',  # Re-install mode overriden
-        '-sice:ICE69',  # Shortcut components are part of a different feature than the files they point to
-    ])
-    cmd.append('-sval')  # Disable all checks since they fail when running under ssh
+    cmd = [
+        LIGHT,
+        '-nologo',
+        '-ext',
+        'WixUIExtension',
+        '-cultures:en-us',
+        '-loc',
+        enusf,
+        wixobj,
+        '-ext',
+        'WixUtilExtension',
+        '-o',
+        installer,
+        f'-dWixUILicenseRtf={license}',
+        f'-dWixUIBannerBmp={banner}',
+        f'-dWixUIDialogBmp={dialog}',
+        '-sice:ICE60',
+        '-sice:ICE61',
+        '-sice:ICE40',
+        '-sice:ICE69',
+        '-sval',
+    ]
+
     run(*cmd)
 
 

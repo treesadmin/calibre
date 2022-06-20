@@ -23,4 +23,4 @@ for ep in importlib.import_module('calibre.linux').entry_points.values():
             mod, func = spec.split(':')
             m = importlib.import_module(mod)
             sys.exit(getattr(m, func)())
-raise SystemExit('No entry point named: {}'.format(entry_point))
+raise SystemExit(f'No entry point named: {entry_point}')

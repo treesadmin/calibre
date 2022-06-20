@@ -49,11 +49,9 @@ class RemotePdb(pdb.Pdb):
         self.handle.close()
         self.clientsocket.shutdown(socket.SHUT_RDWR)
         self.clientsocket.close()
-        try:
+        with suppress(socket.error):
             self.sock.shutdown(socket.SHUT_RDWR)
             self.sock.close()
-        except socket.error:
-            pass
         return pdb.Pdb.do_continue(self, None)
 
     def do_clear(self, arg):
@@ -97,11 +95,9 @@ def cli(port=4444):
     print('Connecting to remote debugger on port %d...' % port)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     for i in range(20):
-        try:
+        with suppress(socket.error):
             sock.connect(('127.0.0.1', port))
             break
-        except socket.error:
-            pass
         time.sleep(0.1)
     else:
         try:
@@ -116,10 +112,8 @@ def cli(port=4444):
         pass
     else:
         histfile = os.path.join(cache_dir(), 'rpdb.history')
-        try:
+        with suppress(IOError):
             readline.read_history_file(histfile)
-        except IOError:
-            pass
         atexit.register(readline.write_history_file, histfile)
         p = pdb.Pdb()
         readline.set_completer(p.complete)

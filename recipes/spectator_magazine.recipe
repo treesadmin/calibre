@@ -18,7 +18,7 @@ except ImportError:
 
 
 def absolutize(url):
-    return 'https://spectator.co.uk' + url
+    return f'https://spectator.co.uk{url}'
 
 
 class Spectator(BasicNewsRecipe):
@@ -50,12 +50,12 @@ class Spectator(BasicNewsRecipe):
         }
 
         def make_url(utype, query, includes=(), limit=None):
-            ans = data[utype] + '/entries?environment=' + data['contentEnvironment']
+            ans = f'{data[utype]}/entries?environment=' + data['contentEnvironment']
             if limit is not None:
-                ans += '&limit={}'.format(limit)
+                ans += f'&limit={limit}'
             for inc in includes:
-                ans += '&include[]=' + inc
-            ans += '&query=' + quote(json.dumps(query))
+                ans += f'&include[]={inc}'
+            ans += f'&query={quote(json.dumps(query))}'
             return ans
 
         def get_result(url):

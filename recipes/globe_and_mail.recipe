@@ -7,7 +7,7 @@ from calibre.web.feeds.news import BasicNewsRecipe
 
 def absolutize(href):
     if href.startswith('/'):
-        href = 'https://www.theglobeandmail.com' + href
+        href = f'https://www.theglobeandmail.com{href}'
     return href
 
 
@@ -40,10 +40,9 @@ class GlobeMail(BasicNewsRecipe):
         for section in 'canada opinion politics sports life arts world real-estate'.split():
             if self.test and len(ans) >= self.test[0]:
                 break
-            soup = self.index_to_soup('https://www.theglobeandmail.com/{}/'.format(section))
+            soup = self.index_to_soup(f'https://www.theglobeandmail.com/{section}/')
             self.log('Processing section:', section)
-            articles = list(self.parse_gm_section(soup))
-            if articles:
+            if articles := list(self.parse_gm_section(soup)):
                 ans.append((section.capitalize(), articles))
         return ans
 

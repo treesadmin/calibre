@@ -54,8 +54,7 @@ class JakartaPost(BasicNewsRecipe):
         for sec in ('editors_choice channel/headlines channel/business channel/national channel/archipelago'
                     ' channel/jakarta channel/world channel/sports').split():
             title = (sec.partition('/')[2] or sec).replace('_', ' ').capitalize()
-            articles = list(self.parse_jp_section(
-                'http://www.thejakartapost.com/' + sec))
+            articles = list(self.parse_jp_section(f'http://www.thejakartapost.com/{sec}'))
             self.log('Found section:', title)
             if articles:
                 ans.append((title, articles))

@@ -10,6 +10,8 @@ hatalska.com
 from calibre.web.feeds.news import BasicNewsRecipe
 
 
+
+
 class hatalska(BasicNewsRecipe):
     title = u'Hatalska'
     __author__ = 'teepel <teepel44@gmail.com>'
@@ -22,7 +24,5 @@ class hatalska(BasicNewsRecipe):
     remove_javascript = True
     no_stylesheets = True
 
-    remove_tags = []
-    remove_tags.append(dict(name='div', attrs={'class': 'feedflare'}))
-
+    remove_tags = [dict(name='div', attrs={'class': 'feedflare'})]
     feeds = [(u'Blog', u'http://feeds.feedburner.com/hatalskacom')]

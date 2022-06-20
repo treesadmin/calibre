@@ -88,8 +88,7 @@ class Develop(Command):
             opts.prefix = sys.prefix
         for x in ('prefix', 'libdir', 'bindir', 'sharedir', 'staging_root',
                 'staging_libdir', 'staging_bindir', 'staging_sharedir'):
-            o = getattr(opts, x, None)
-            if o:
+            if o := getattr(opts, x, None):
                 setattr(opts, x, os.path.abspath(o))
         self.libdir = getattr(opts, 'libdir', None)
         if self.libdir is None:
@@ -161,10 +160,10 @@ class Develop(Command):
             if not os.path.exists(libdir):
                 os.makedirs(libdir)
         except EnvironmentError:
-            self.warn('Cannot install calibre environment module to: '+libdir)
+            self.warn(f'Cannot install calibre environment module to: {libdir}')
         else:
             path = os.path.join(libdir, 'init_calibre.py')
-            self.info('Installing calibre environment module: '+path)
+            self.info(f'Installing calibre environment module: {path}')
             with open(path, 'wb') as f:
                 f.write(HEADER.format(**self.template_args()).encode('utf-8'))
             self.manifest.append(path)
@@ -296,10 +295,10 @@ class Sdist(Command):
             os.makedirs(self.d(self.DEST))
         tdir = tempfile.mkdtemp()
         atexit.register(shutil.rmtree, tdir)
-        tdir = self.j(tdir, 'calibre-%s' % __version__)
+        tdir = self.j(tdir, f'calibre-{__version__}')
         self.info('\tRunning git export...')
         os.mkdir(tdir)
-        subprocess.check_call('git archive HEAD | tar -x -C ' + tdir, shell=True)
+        subprocess.check_call(f'git archive HEAD | tar -x -C {tdir}', shell=True)
         for x in open('.gitignore').readlines():
             if not x.startswith('resources/'):
                 continue
@@ -336,7 +335,11 @@ class Sdist(Command):
         self.info('\tCreating tarfile...')
         dest = self.DEST.rpartition('.')[0]
         shutil.rmtree(os.path.join(tdir, '.github'))
-        subprocess.check_call(['tar', '-cf', self.a(dest), 'calibre-%s' % __version__], cwd=self.d(tdir))
+        subprocess.check_call(
+            ['tar', '-cf', self.a(dest), f'calibre-{__version__}'],
+            cwd=self.d(tdir),
+        )
+
         self.info('\tCompressing tarfile...')
         if os.path.exists(self.a(self.DEST)):
             os.remove(self.a(self.DEST))
@@ -364,7 +367,12 @@ class Bootstrap(Command):
     def pre_sub_commands(self, opts):
         tdir = self.j(self.d(self.SRC), 'translations')
         clone_cmd = [
-            'git', 'clone', 'https://github.com/{}.git'.format(self.TRANSLATIONS_REPO), 'translations']
+            'git',
+            'clone',
+            f'https://github.com/{self.TRANSLATIONS_REPO}.git',
+            'translations',
+        ]
+
         if opts.ephemeral:
             if os.path.exists(tdir):
                 shutil.rmtree(tdir)
@@ -373,11 +381,10 @@ class Bootstrap(Command):
             clone_cmd.insert(2, '--depth=1')
             subprocess.check_call(clone_cmd, cwd=self.d(self.SRC))
             print('Downloaded translations in %d seconds' % int(time.time() - st))
+        elif os.path.exists(tdir):
+            subprocess.check_call(['git', 'pull'], cwd=tdir)
         else:
-            if os.path.exists(tdir):
-                subprocess.check_call(['git', 'pull'], cwd=tdir)
-            else:
-                subprocess.check_call(clone_cmd, cwd=self.d(self.SRC))
+            subprocess.check_call(clone_cmd, cwd=self.d(self.SRC))
 
     def run(self, opts):
         self.info('\n\nAll done! You should now be able to run "%s setup.py install" to install calibre' % sys.executable)

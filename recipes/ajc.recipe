@@ -93,12 +93,11 @@ class AdvancedUserRecipe1282101454(BasicNewsRecipe):
     # Retuning "None" from preprocess_html(soup) as suggested in mobileread
     # forums leads to errors.
     def preprocess_html(self, soup):
-        premium = soup.find('div', attrs={'class': re.compile(
-            self.premium_reg_exp, re.IGNORECASE)})
-        if premium:
+        if premium := soup.find(
+            'div', attrs={'class': re.compile(self.premium_reg_exp, re.IGNORECASE)}
+        ):
             return None
-        crosslink = soup.find('a', attrs={'class': 'cm-feed-story-more-link'})
-        if crosslink:
+        if crosslink := soup.find('a', attrs={'class': 'cm-feed-story-more-link'}):
             return None
         return soup
 
@@ -108,10 +107,7 @@ class AdvancedUserRecipe1282101454(BasicNewsRecipe):
             article.summary = meta['content']
 
         lead = soup.find('div', attrs={'class': 'cm-story-photo'})
-        if lead:
-            lead = lead.find('img')
-        else:
-            lead = soup.find('img')
+        lead = lead.find('img') if lead else soup.find('img')
         if lead:
             self.add_toc_thumbnail(article, lead['src'])
         names = ''

@@ -50,8 +50,7 @@ class ThePrint(BasicNewsRecipe):
                 title = self.tag_to_string(h3)
                 url = h3.find('a')['href']
                 desc = ''
-                dnode = h3.parent.find(**classes('td-excerpt'))
-                if dnode:
+                if dnode := h3.parent.find(**classes('td-excerpt')):
                     desc = self.tag_to_string(dnode)
                 self.log('\t', title)
                 ans[current_section].append({'title': title, 'url': url, 'description': desc})
@@ -59,7 +58,6 @@ class ThePrint(BasicNewsRecipe):
         for sec in secs:
             if sec in ('On Camera',):
                 continue
-            arts = ans[sec]
-            if arts:
+            if arts := ans[sec]:
                 ret.append((sec, arts))
         return ret

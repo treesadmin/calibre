@@ -36,8 +36,7 @@ def process_node(node, html_parent):
         for nc in node.get('children', ()):
             process_node(nc, c)
     elif ntype == 'text':
-        text = node.get('data')
-        if text:
+        if text := node.get('data'):
             text = replace_entities(text)
             if len(html_parent):
                 t = html_parent[-1]
@@ -90,7 +89,7 @@ class NoArticles(Exception):
 
 def process_url(url):
     if url.startswith('/'):
-        url = 'https://www.economist.com' + url
+        url = f'https://www.economist.com{url}'
     return url
 
 
@@ -200,14 +199,12 @@ class Economist(BasicNewsRecipe):
     def preprocess_raw_html(self, raw, url):
         # open('/t/raw.html', 'wb').write(raw.encode('utf-8'))
         root = parse(raw)
-        script = root.xpath('//script[@id="__NEXT_DATA__"]')
-        if script:
+        if script := root.xpath('//script[@id="__NEXT_DATA__"]'):
             load_article_from_json(script[0].text, root)
         for div in root.xpath('//div[@class="lazy-image"]'):
             noscript = list(div.iter('noscript'))
             if noscript and noscript[0].text:
-                img = list(parse(noscript[0].text).iter('img'))
-                if img:
+                if img := list(parse(noscript[0].text).iter('img')):
                     p = noscript[0].getparent()
                     idx = p.index(noscript[0])
                     p.insert(idx, p.makeelement('img', src=img[0].get('src')))
@@ -221,11 +218,14 @@ class Economist(BasicNewsRecipe):
         els = soup.findAll(name=['span', 'p'],
                            attrs={'class': ['flytitle-and-title__title', 'blog-post__rubric']})
         result = []
-        for el in els[0:2]:
+        for el in els[:2]:
             if el is not None and el.contents:
-                for descendant in el.contents:
-                    if isinstance(descendant, NavigableString):
-                        result.append(type(u'')(descendant))
+                result.extend(
+                    type(u'')(descendant)
+                    for descendant in el.contents
+                    if isinstance(descendant, NavigableString)
+                )
+
         article.summary = u'. '.join(result) + u'.'
         article.text_summary = clean_ascii_chars(article.summary)
 
@@ -239,8 +239,8 @@ class Economist(BasicNewsRecipe):
         #     'url':'file:///t/raw.html'
         # }])]
         if edition_date:
-            url = 'https://www.economist.com/weeklyedition/' + edition_date
-            self.timefmt = ' [' + edition_date + ']'
+            url = f'https://www.economist.com/weeklyedition/{edition_date}'
+            self.timefmt = f' [{edition_date}]'
         else:
             url = 'https://www.economist.com/printedition'
         raw = self.index_to_soup(url, raw=True)
@@ -295,7 +295,7 @@ class Economist(BasicNewsRecipe):
 
     def eco_find_image_tables(self, soup):
         for x in soup.findAll('table', align=['right', 'center']):
-            if len(x.findAll('font')) in (1, 2) and len(x.findAll('img')) == 1:
+            if len(x.findAll('font')) in {1, 2} and len(x.findAll('img')) == 1:
                 yield x
 
     def postprocess_html(self, soup, first):

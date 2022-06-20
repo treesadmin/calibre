@@ -45,9 +45,9 @@ class BsAsEconomico(BasicNewsRecipe):
     feeds = [(u'Articles', u'http://www.diariobae.com/feed/getfeed')]
 
     def get_cover_url(self):
-        cover = None
         soup = self.index_to_soup('http://www.diariobae.com/')
-        tag = soup.find('a', rel='lightbox[tapa]', href=True)
-        if tag:
-            cover = tag['href']
-        return cover
+        return (
+            tag['href']
+            if (tag := soup.find('a', rel='lightbox[tapa]', href=True))
+            else None
+        )

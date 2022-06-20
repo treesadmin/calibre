@@ -76,7 +76,7 @@ class laGazzetta(BasicNewsRecipe):
         articleURL = (segments[len(segments) - 1])[:-6]
         myArticleSegs = articleURL.split('.')
         myArticle = myArticleSegs[0]
-        printVerString = myArticle + '_print.html'
+        printVerString = f'{myArticle}_print.html'
         myURL = basename + subPath + printVerString
-        print('this is the url: ' + myURL)
+        print(f'this is the url: {myURL}')
         return basename + subPath + printVerString

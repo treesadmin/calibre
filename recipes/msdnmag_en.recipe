@@ -42,13 +42,12 @@ class MSDNMagazine_en(BasicNewsRecipe):
             desc_html = self.tag_to_string(article.find('description'))
             description = self.tag_to_string(BeautifulSoup(desc_html))
 
-            a = {
-                'title':  self.tag_to_string(article.find('title')),
+            yield {
+                'title': self.tag_to_string(article.find('title')),
                 'url': self.tag_to_string(article.find('link')),
                 'description': description,
                 'date': self.tag_to_string(article.find('pubdate')),
             }
-            yield a
 
     def parse_index(self):
         soup = self.index_to_soup(self.base_url)

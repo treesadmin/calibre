@@ -62,9 +62,7 @@ class AdvancedUserRecipe1305470859(BasicNewsRecipe):
         for li in tags:
             if 'BILDERSTRECKE' in self.tag_to_string(li).upper():
                 self.abort_article()
-        # remove list of tags
-        tags = soup.find('ul', {'class': 'tag-chain'})
-        if tags:
+        if tags := soup.find('ul', {'class': 'tag-chain'}):
             tags.extract()
         # remove all style attributes
         for item in soup.findAll(style=True):

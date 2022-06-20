@@ -23,7 +23,7 @@ def sphinx_build(language, base, builder='html', bdir='html', t=None, quiet=True
     destdir = j(base, bdir)
     if not os.path.exists(destdir):
         os.makedirs(destdir)
-    ans = SPHINX_BUILD + ['-D', ('language=' + language), '-b', builder]
+    ans = SPHINX_BUILD + ['-D', f'language={language}', '-b', builder]
     if quiet:
         ans.append('-q')
     if very_quiet:

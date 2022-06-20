@@ -36,7 +36,7 @@ def files_in(folder):
 
 def expand_dirs(items, exclude=lambda x: x.endswith('.so')):
     items = set(items)
-    dirs = set(x for x in items if os.path.isdir(x))
+    dirs = {x for x in items if os.path.isdir(x)}
     items.difference_update(dirs)
     for x in dirs:
         items.update({y for y in files_in(x) if not exclude(y)})
@@ -51,8 +51,7 @@ def get_executable(info_path):
 def find_sub_apps(contents_dir='.'):
     for app in glob(os.path.join(contents_dir, '*.app')):
         cdir = os.path.join(app, 'Contents')
-        for sapp in find_sub_apps(cdir):
-            yield sapp
+        yield from find_sub_apps(cdir)
         yield app
 
 
@@ -62,8 +61,9 @@ def sign_MacOS(contents_dir='.'):
     # signing the app bundles
     with current_dir(os.path.join(contents_dir, 'MacOS')):
         exe = get_executable('../Info.plist')
-        items = {x for x in os.listdir('.') if x != exe and not os.path.islink(x)}
-        if items:
+        if items := {
+            x for x in os.listdir('.') if x != exe and not os.path.islink(x)
+        }:
             codesign(items)
 
 

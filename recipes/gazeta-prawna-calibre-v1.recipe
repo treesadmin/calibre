@@ -66,8 +66,8 @@ class gazetaprawna(BasicNewsRecipe):
     def parse_feeds(self):
         self.log(_('Gazeta Prawna overrided parse_feeds()'))
         parsed_feeds = BasicNewsRecipe.parse_feeds(self)
-        for n, feed in enumerate(parsed_feeds):
-            for a, article in enumerate(feed):
+        for feed in parsed_feeds:
+            for article in feed:
                 article.text_summary = re.sub(r'<\!\[CDATA\[', "", article.text_summary)
                 article.text_summary = re.sub(r'\]\]', "", article.text_summary)
                 article.summary = article.text_summary
@@ -91,10 +91,8 @@ class gazetaprawna(BasicNewsRecipe):
         return soup
 
     def populate_article_metadata(self, article, soup, first):
-        Img = soup.find(name='div', attrs={'class': ['psavBigImg']})
-        if Img:
-            img_tag = Img.find(name='img', attrs={'src': True})
-            if img_tag:
+        if Img := soup.find(name='div', attrs={'class': ['psavBigImg']}):
+            if img_tag := Img.find(name='img', attrs={'src': True}):
                 self.add_toc_thumbnail(article, img_tag['src'])
                 self.log(_('adding thumbnail: %s to Article') % (img_tag['src']))
                 article.author = 'Gazeta prawna.pl'
